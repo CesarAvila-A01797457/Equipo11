@@ -59,3 +59,15 @@ MLOps Equipo 11 Proyecto
 
 --------
 
+## Instalación y descarga de datos
+
+Se requiere Python 3.14 y conexión a internet para descargar los archivos públicos de MiBici.
+
+```bash
+python3.14 -m venv .venv
+source .venv/bin/activate
+python -m pip install -r requirements.txt
+python -m MiBici.dataset
+
+
+
