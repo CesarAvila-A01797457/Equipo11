@@ -58,19 +58,25 @@ MLOps Equipo 11 Proyecto
 ```
 
 --------
-
 ## Instalación y descarga de datos
 
-Se requiere Python 3.14 y conexión a internet para descargar los archivos públicos de MiBici.
+El proyecto utiliza los CSV mensuales de viajes de [MiBici Open Data](https://mibici.net/en/open-data/) y el catálogo de estaciones `nomenclatura_2026_09.csv`. Los archivos originales se guardan en `data/raw/mibici/`; esta carpeta está excluida de Git para no publicar ni duplicar los datos.
 
 ```bash
 python3.14 -m venv .venv
 source .venv/bin/activate
 python -m pip install -r requirements.txt
 python -m MiBici.dataset
+```
 
-## Preparacion de datos
+El comando descarga las URLs de `references/mibici_urls_2014_2026.txt` y el catálogo de estaciones. Omite los archivos que ya existan y actualiza `data/raw/mibici/manifest.csv` con tamaño, fecha, estado y SHA-256 de cada archivo.
+
+## Preparación de datos
+
+Después de descargar los archivos, carga los viajes mensuales en un DataFrame y la nomenclatura en otro, sin eliminar filas o columnas, limpiar, normalizar, codificar variables, agregar o unir las tablas:
+
+```bash
 python -m MiBici.prepare_data
-mlflow ui --backend-store-uri sqlite:///data/mlflow.db
-
+```
+MLflow registra cada ejecución y la información de las fuentes para dar seguimiento a las versiones de los datos.
 

@@ -18,6 +18,9 @@ app = typer.Typer(help="Descarga los datos mensuales originales de MiBici.")
 
 DEFAULT_URLS_FILE = PROJ_ROOT / "references" / "mibici_urls_2014_2026.txt"
 DEFAULT_OUTPUT_DIR = RAW_DATA_DIR / "mibici"
+STATION_CATALOG_URL = (
+    "https://mibici.net/site/assets/files/1118/nomenclatura_2026_09.csv"
+)
 CHUNK_SIZE = 1024 * 1024
 MAX_ATTEMPTS = 3
 TIMEOUT_SECONDS = 60
@@ -161,6 +164,8 @@ def download(
 ) -> None:
     """Descarga los CSV mensuales y omite los que ya existen, salvo con --force."""
     urls = read_urls(urls_file)
+    if STATION_CATALOG_URL not in urls:
+        urls.append(STATION_CATALOG_URL)
     output_dir.mkdir(parents=True, exist_ok=True)
 
     manifest_path = output_dir / "manifest.csv"
@@ -170,6 +175,7 @@ def download(
 
     logger.info("{} URLs encontradas. Destino: {}", len(urls), output_dir)
     logger.info("Archivo de URLs: {}", urls_file)
+    logger.info("Catálogo de estaciones: {}", STATION_CATALOG_URL)
     logger.info(
         "Inicio de descarga: {} archivos por descargar; forzar descarga: {}",
         len(urls),
