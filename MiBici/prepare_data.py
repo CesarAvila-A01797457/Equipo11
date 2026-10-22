@@ -5,6 +5,7 @@ from typing import Annotated
 
 from loguru import logger
 import mlflow
+import mlflow.data
 import pandas as pd
 import typer
 
@@ -45,6 +46,9 @@ def load_dataframes(
         trip_files[0].stem,
         trip_files[-1].stem,
     )
+    logger.warning(
+        "El conjunto completo contiene decenas de millones de viajes y requiere memoria suficiente"
+    )
 
     trip_frames = []
     progress_interval = max(1, (len(trip_files) + 9) // 10)
@@ -72,6 +76,7 @@ def load_dataframes(
     )
     if "dpcapacity" in stations_df.columns:
         logger.info("La capacidad dpcapacity se conserva en el DataFrame de estaciones.")
+    logger.info("Los DataFrames se mantienen separados; no se unen entre sí.")
     return trips_df, stations_df
 
 
@@ -101,6 +106,18 @@ def run(
 
     logger.info("ETAPA 3/3: Registro de la versión de las fuentes en MLflow")
     with mlflow.start_run(run_name="load-mibici-dataframes") as run:
+        trips_dataset = mlflow.data.from_pandas(
+            trips_df,
+            source=str(raw_dir.resolve()),
+            name="mibici_viajes",
+        )
+        stations_dataset = mlflow.data.from_pandas(
+            stations_df,
+            source=str((raw_dir / CATALOG_NAME).resolve()),
+            name="mibici_estaciones_2026_09",
+        )
+        mlflow.log_input(trips_dataset, context="source")
+        mlflow.log_input(stations_dataset, context="source")
         mlflow.log_param("trip_source", "CSV mensuales MiBici")
         mlflow.log_param("trip_source_file_count", len(trip_files))
         mlflow.log_param(
@@ -108,8 +125,6 @@ def run(
         )
         mlflow.log_param("station_catalog", CATALOG_NAME)
         mlflow.log_param("station_catalog_url", CATALOG_URL)
-        mlflow.log_param("trip_columns", ", ".join(map(str, trips_df.columns)))
-        mlflow.log_param("station_columns", ", ".join(map(str, stations_df.columns)))
         mlflow.log_metric("trip_rows", len(trips_df))
         mlflow.log_metric("trip_column_count", len(trips_df.columns))
         mlflow.log_metric("station_rows", len(stations_df))
