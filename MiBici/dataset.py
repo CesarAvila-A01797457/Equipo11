@@ -1,4 +1,4 @@
-"""Download the monthly MiBici trip files listed in references/."""
+"""Descarga los archivos mensuales de viajes de MiBici."""
 
 import csv
 import hashlib
@@ -14,7 +14,7 @@ from loguru import logger
 
 from MiBici.config import PROJ_ROOT, RAW_DATA_DIR
 
-app = typer.Typer(help="Download and manage the raw MiBici trip data.")
+app = typer.Typer(help="Descarga los datos mensuales originales de MiBici.")
 
 DEFAULT_URLS_FILE = PROJ_ROOT / "references" / "mibici_urls_2014_2026.txt"
 DEFAULT_OUTPUT_DIR = RAW_DATA_DIR / "mibici"
@@ -24,11 +24,12 @@ TIMEOUT_SECONDS = 60
 
 
 def utc_now() -> str:
+    """Devuelve la fecha y hora actual en UTC."""
     return datetime.now(timezone.utc).isoformat(timespec="seconds")
 
 
 def read_urls(urls_file: Path) -> list[str]:
-    """Read unique HTTP(S) CSV URLs from a line-oriented text file."""
+    """Lee y valida URLs únicas de archivos CSV."""
     if not urls_file.is_file():
         raise typer.BadParameter(f"No se encontró el archivo de URLs: {urls_file}")
 
@@ -61,6 +62,7 @@ def read_urls(urls_file: Path) -> list[str]:
 
 
 def sha256_file(path: Path) -> str:
+    """Calcula el SHA-256 leyendo el archivo por partes."""
     digest = hashlib.sha256()
     with path.open("rb") as file:
         for chunk in iter(lambda: file.read(CHUNK_SIZE), b""):
@@ -69,6 +71,7 @@ def sha256_file(path: Path) -> str:
 
 
 def read_manifest(manifest_path: Path) -> dict[str, dict[str, str]]:
+    """Lee el manifiesto existente para conservar datos de descargas previas."""
     if not manifest_path.exists():
         return {}
     with manifest_path.open(encoding="utf-8", newline="") as file:
@@ -97,11 +100,12 @@ def write_manifest(
         writer = csv.DictWriter(file, fieldnames=fields)
         writer.writeheader()
         writer.writerows(entries)
+    # Reemplaza el manifiesto completo para evitar dejarlo escrito a medias.
     temporary_path.replace(manifest_path)
 
 
 def download_one(url: str, destination: Path) -> tuple[int, str]:
-    """Download one file atomically and return its byte count and SHA-256."""
+    """Descarga un archivo y devuelve su tamaño y SHA-256."""
     temporary_path = destination.with_name(f"{destination.name}.part")
     request = Request(
         url,
@@ -109,6 +113,7 @@ def download_one(url: str, destination: Path) -> tuple[int, str]:
     )
     last_error = None
 
+    # Se reintenta la descarga si hay un error de red o de escritura.
     for attempt in range(1, MAX_ATTEMPTS + 1):
         digest = hashlib.sha256()
         byte_count = 0
@@ -123,6 +128,7 @@ def download_one(url: str, destination: Path) -> tuple[int, str]:
             if byte_count == 0:
                 raise OSError("El servidor devolvió un archivo vacío")
 
+            # El archivo queda disponible con su nombre final solo al completarse.
             temporary_path.replace(destination)
             return byte_count, digest.hexdigest()
 
@@ -153,7 +159,7 @@ def download(
         help="Volver a descargar archivos que ya existen.",
     ),
 ) -> None:
-    """Download monthly CSVs, skipping existing files unless --force is used."""
+    """Descarga los CSV mensuales y omite los que ya existen, salvo con --force."""
     urls = read_urls(urls_file)
     output_dir.mkdir(parents=True, exist_ok=True)
 
@@ -163,6 +169,12 @@ def download(
     downloaded = skipped = failed = 0
 
     logger.info("{} URLs encontradas. Destino: {}", len(urls), output_dir)
+    logger.info("Archivo de URLs: {}", urls_file)
+    logger.info(
+        "Inicio de descarga: {} archivos por descargar; forzar descarga: {}",
+        len(urls),
+        force,
+    )
 
     for index, url in enumerate(urls, 1):
         filename = Path(urlparse(url).path).name
@@ -221,19 +233,26 @@ def download(
 
         entries.append(entry)
 
-        # Persist progress after each URL so an interrupted run can be resumed.
+        # Guarda el avance para poder continuar si la ejecución se interrumpe.
         write_manifest(manifest_path, entries)
 
     logger.info(
-        "Descargas nuevas: {}; existentes: {}; errores: {}",
+        "Resumen de descarga: {} URLs revisadas; {} descargadas; {} ya existentes; {} errores",
+        len(urls),
         downloaded,
         skipped,
         failed,
     )
+    logger.info("Archivos originales: {}", output_dir)
     logger.info("Manifiesto de descarga: {}", manifest_path)
 
     if failed:
+        logger.error("Revisa los errores anteriores y vuelve a ejecutar la descarga.")
         raise typer.Exit(code=1)
+
+    logger.success(
+        "Descarga completada. Para preparar los datos ejecuta: python -m MiBici.prepare_data"
+    )
 
 
 if __name__ == "__main__":

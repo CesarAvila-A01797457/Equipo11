@@ -69,5 +69,8 @@ source .venv/bin/activate
 python -m pip install -r requirements.txt
 python -m MiBici.dataset
 
+## Preparacion de datos
+python -m MiBici.prepare_data
+mlflow ui --backend-store-uri sqlite:///data/mlflow.db
 
 
