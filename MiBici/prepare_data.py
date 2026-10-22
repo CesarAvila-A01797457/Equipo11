@@ -40,13 +40,10 @@ def load_dataframes(
 
     logger.info("ETAPA 1/3: Carga de los CSV mensuales de viajes")
     logger.info(
-        "Se combinarán {} archivos ({} a {}) en un DataFrame; no se filtrarán filas ni columnas",
+        "Se combinarán {} archivos ({} a {}) en un DataFrame",
         len(trip_files),
         trip_files[0].stem,
         trip_files[-1].stem,
-    )
-    logger.warning(
-        "El conjunto completo contiene decenas de millones de viajes y requiere memoria suficiente"
     )
 
     trip_frames = []
@@ -75,7 +72,6 @@ def load_dataframes(
     )
     if "dpcapacity" in stations_df.columns:
         logger.info("La capacidad dpcapacity se conserva en el DataFrame de estaciones.")
-    logger.info("Los DataFrames se mantienen separados; no se unen entre sí.")
     return trips_df, stations_df
 
 
@@ -129,7 +125,7 @@ def run(
             artifact_path="source",
         )
 
-    logger.success("Datos cargados; no se limpiaron ni transformaron.")
+    logger.success("Datos cargados.")
     logger.info("Experimento MLflow: {}", experiment_name)
     logger.info("ID de ejecución: {}", run.info.run_id)
     logger.info("Base de MLflow: {}", tracking_db)
