@@ -80,4 +80,8 @@ python -m MiBici.prepare_data
 ```
 El proceso consolida los CSV mensuales en un DataFrame y después valida `Viaje_Id`, `Inicio_del_viaje` y `Origen_Id`. Excluye registros con esos campos vacíos o inválidos y viajes duplicados dentro del mismo mes; después agrupa los viajes válidos por fecha y estación de origen.
 
-El resultado se guarda en `data/processed/mibici_salidas_estacion_fecha.csv` y el resumen de limpieza en `data/processed/mibici_quality_report.json`. MLflow registra el dataset preparado.
+El resultado se guarda en `data/processed/mibici_salidas_estacion_fecha.csv` y el resumen de limpieza en `data/processed/mibici_quality_report.json`. MLflow registra el dataset preparado:
+
+```bash
+mlflow ui --backend-store-uri sqlite:///data/mlflow.db
+```
