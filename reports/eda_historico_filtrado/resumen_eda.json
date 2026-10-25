@@ -1,0 +1,62 @@
+{
+  "period_start": "2014-12-01",
+  "period_end": "2026-09-30",
+  "station_date_rows": 1160636,
+  "total_departures": 37725836,
+  "stations_observed": 486,
+  "calendar_days": 4322,
+  "days_with_data": 4322,
+  "missing_whole_dates": 0,
+  "mean_daily_departures": 8728.791300323925,
+  "median_station_date_departures": 23.0,
+  "p99_station_date_departures": 167.0,
+  "max_station_date_departures": 546,
+  "min_stations_with_trips_per_day": 64,
+  "max_stations_with_trips_per_day": 468,
+  "weekday_highest_mean_system_departures": "Martes",
+  "top_10_station_departure_share": 0.13625781546630272,
+  "pooled_iqr_lower": -38.5,
+  "pooled_iqr_upper": 93.5,
+  "pooled_iqr_alert_rows": 55003,
+  "within_station_iqr_alert_rows": 8586,
+  "incomplete_years": [
+    2014,
+    2026
+  ],
+  "diagnostics": {
+    "missing_values": {
+      "fecha": 0,
+      "estacion_id": 0,
+      "salidas": 0
+    },
+    "duplicate_station_date_keys": 0,
+    "invalid_dates": 0,
+    "invalid_station_ids": 0,
+    "invalid_counts": 0,
+    "explicit_zero_rows": 0,
+    "matches_preparation_report": true
+  },
+  "scope": "EDA descriptiva del histórico completo; incluye periodo posterior al futuro corte de entrenamiento.",
+  "preparation": {
+    "input_files": 142,
+    "rows_read": 39078984,
+    "rows_kept": 37725836,
+    "rows_removed_total": 1353148,
+    "rows_removed": {
+      "invalid_trip_id": 0,
+      "invalid_timestamp": 0,
+      "invalid_station_id": 0,
+      "duplicate_trip_ids": 758,
+      "short_same_station_trips": 1352390
+    }
+  },
+  "input_sha256": "8bdfbd5c8952f9f261d4dbf950a48756cdc2b56c9c686a4898b63aac95beae83",
+  "source_preparation_run_id": "ec55a8421f944f4a913bc064975ca289",
+  "software_versions": {
+    "pandas": "3.1.0",
+    "numpy": "2.5.4",
+    "matplotlib": "3.11.2",
+    "scipy": "1.18.1",
+    "python": "3.13.1"
+  }
+}

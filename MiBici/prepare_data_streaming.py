@@ -27,7 +27,12 @@ from MiBici.prepare_data import (
     QUALITY_REPORT_NAME,
     TRIP_COLUMNS,
     csv_encoding,
-    parse_start_time,
+)
+
+from MiBici.data_cleaning_stages.coerce_types import parse_start_time
+from MiBici.data_cleaning_stages.drop_short_same_station_trips import (
+    SHORT_TRIP_LIMIT,
+    drop_short_same_station_trips,
 )
 
 app = typer.Typer(
@@ -38,6 +43,7 @@ REMOVAL_KEYS = (
     "invalid_timestamp",
     "invalid_station_id",
     "duplicate_trip_ids",
+    "short_same_station_trips",
 )
 
 
@@ -83,7 +89,7 @@ def process_files(
             connection.execute("PRAGMA temp_store=FILE")
             connection.execute(
                 "CREATE TABLE trips (month TEXT NOT NULL, trip_id INTEGER NOT NULL, "
-                "fecha TEXT NOT NULL, estacion_id INTEGER NOT NULL, "
+                "fecha TEXT NOT NULL, estacion_id INTEGER NOT NULL, keep_trip INTEGER NOT NULL, "
                 "PRIMARY KEY(month, trip_id)) WITHOUT ROWID"
             )
             for index, path in enumerate(trip_files, 1):
@@ -125,23 +131,40 @@ def process_files(
                             (valid_id & valid_time & ~valid_station).sum()
                         )
                         valid = valid_id & valid_time & valid_station
-                        dates = start_time.loc[valid].dt.strftime("%Y-%m-%d")
-                        ids = trip_id.loc[valid].astype("int64")
-                        stations = station_id.loc[valid].astype("int64")
-                        before = connection.total_changes
-                        # SQLite conserva la primera aparición, igual que duplicated(keep='first').
+                        candidates = chunk.loc[valid].copy()
+                        candidates["Viaje_Id"] = trip_id.loc[valid].astype("int64")
+                        candidates["Origen_Id"] = station_id.loc[valid].astype("int64")
+                        candidates["Inicio_del_viaje"] = start_time.loc[valid]
+                        candidates["_month"] = start_time.loc[valid].dt.strftime("%Y-%m")
+                        # Primero deduplicar; un viaje excluido también reserva su clave.
+                        candidates = candidates.drop_duplicates(
+                            ["_month", "Viaje_Id"], keep="first"
+                        )
+                        filtered, _ = drop_short_same_station_trips(candidates)
+                        keep_mask = candidates.index.isin(filtered.index)
+                        inserted_total = 0
                         with connection:
-                            connection.executemany(
-                                "INSERT OR IGNORE INTO trips VALUES (?, ?, ?, ?)",
-                                (
-                                    (date[:7], int(tid), date, int(station))
-                                    for date, tid, station in zip(dates, ids, stations)
-                                ),
-                            )
-                        inserted = connection.total_changes - before
-                        removed["duplicate_trip_ids"] += int(valid.sum()) - inserted
-                        rows_kept += inserted
-                        file_kept += inserted
+                            for keep_trip in (1, 0):
+                                group = candidates.loc[keep_mask if keep_trip else ~keep_mask]
+                                dates = group["Inicio_del_viaje"].dt.strftime("%Y-%m-%d")
+                                before = connection.total_changes
+                                connection.executemany(
+                                    "INSERT OR IGNORE INTO trips VALUES (?, ?, ?, ?, ?)",
+                                    (
+                                        (date[:7], int(tid), date, int(station), keep_trip)
+                                        for date, tid, station in zip(
+                                            dates, group["Viaje_Id"], group["Origen_Id"]
+                                        )
+                                    ),
+                                )
+                                inserted = connection.total_changes - before
+                                inserted_total += inserted
+                                if keep_trip:
+                                    rows_kept += inserted
+                                    file_kept += inserted
+                                else:
+                                    removed["short_same_station_trips"] += inserted
+                        removed["duplicate_trip_ids"] += int(valid.sum()) - inserted_total
                 files.append(
                     {
                         "filename": path.name,
@@ -166,7 +189,7 @@ def process_files(
             )
             cursor = connection.execute(
                 "SELECT fecha, estacion_id, COUNT(*) FROM trips "
-                "GROUP BY fecha, estacion_id ORDER BY fecha, estacion_id"
+                "WHERE keep_trip = 1 GROUP BY fecha, estacion_id ORDER BY fecha, estacion_id"
             )
             output_rows = total_departures = 0
             temporary_csv = temporary_dir / OUTPUT_NAME
@@ -201,14 +224,18 @@ def process_files(
                     timespec="seconds"
                 ),
                 "processing_mode": "chunked_csv_sqlite",
+                "filter_version": "short_same_station_v1",
+                "short_trip_limit_seconds": SHORT_TRIP_LIMIT.total_seconds(),
                 "chunk_size": chunk_size,
                 "conservation_check": total_departures == rows_kept,
                 "cleaning_rules": [
-                    "Se leen únicamente Viaje_Id, Inicio_del_viaje y Origen_Id por bloques.",
+                    "Se leen Viaje_Id, Inicio_del_viaje, Fin_del_viaje, Origen_Id y Destino_Id por bloques.",
                     "Se excluyen claves vacías, no positivas, no enteras o fechas inválidas.",
                     "Las causas de exclusión son excluyentes, en el orden del script original.",
                     "Se conserva el primer viaje válido por (mes de inicio, Viaje_Id).",
                     "La deduplicación abarca todos los bloques y archivos del mismo mes.",
+                    "Después de deduplicar se excluyen viajes de duración >=0 y <2 minutos con origen igual a destino.",
+                    "Fin inválido, duración negativa o destino inválido no activan el filtro.",
                     "Se conservan picos de demanda y no se infieren días con cero salidas.",
                     "Los CSV originales no se modifican.",
                 ],
@@ -277,6 +304,8 @@ def register_mlflow(
                 "chunk_size": report["chunk_size"],
                 "processing_mode": report["processing_mode"],
                 "deduplication_key": "month,Viaje_Id",
+                "filter_version": report["filter_version"],
+                "short_trip_limit_seconds": report["short_trip_limit_seconds"],
                 "period_start": report["period_start"],
                 "period_end": report["period_end"],
                 "station_catalog": CATALOG_NAME,
@@ -306,6 +335,10 @@ def register_mlflow(
         mlflow.log_artifact(str(Path(__file__).resolve()), artifact_path="source")
         mlflow.log_artifact(
             str(PROJ_ROOT / "MiBici/prepare_data.py"), artifact_path="source"
+        )
+        mlflow.log_artifacts(
+            str(PROJ_ROOT / "MiBici/data_cleaning_stages"),
+            artifact_path="source/data_cleaning_stages",
         )
         manifest = raw_dir / MANIFEST_NAME
         if manifest.is_file():
