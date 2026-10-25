@@ -12,12 +12,19 @@ import pandas as pd
 import typer
 
 from MiBici.config import PROCESSED_DATA_DIR, PROJ_ROOT, RAW_DATA_DIR
+from MiBici.data_cleaning_stages import DEFAULT_PIPELINE, coerce_and_validate_types, drop_duplicate_trip_ids, drop_short_same_station_trips, run_pipeline
 
 app = typer.Typer(help="Limpia y prepara los datos de viajes de MiBici.")
 CATALOG_NAME = "nomenclatura_2026_09.csv"
 CATALOG_URL = "https://mibici.net/site/assets/files/1118/nomenclatura_2026_09.csv"
 MANIFEST_NAME = "manifest.csv"
-TRIP_COLUMNS = ["Viaje_Id", "Inicio_del_viaje", "Origen_Id"]
+TRIP_COLUMNS = [
+    "Viaje_Id",
+    "Inicio_del_viaje",
+    "Fin_del_viaje",
+    "Origen_Id",
+    "Destino_Id",
+]
 OUTPUT_NAME = "mibici_salidas_estacion_fecha.csv"
 QUALITY_REPORT_NAME = "mibici_quality_report.json"
 
@@ -83,79 +90,35 @@ def load_dataframes(
     return trips_df, stations_df
 
 
-def parse_start_time(values: pd.Series) -> tuple[pd.Series, dict[str, int]]:
-    """Convierte los formatos de fecha usados en los CSV de MiBici."""
-    text = values.astype("string").str.strip().replace("", pd.NA)
-    iso_mask = text.str.match(r"^\d{4}[-/]\d{1,2}[-/]\d{1,2}", na=False)
-    dmy_mask = text.str.match(r"^\d{1,2}[-/]\d{1,2}[-/]\d{4}", na=False)
-
-    parsed = pd.Series(pd.NaT, index=values.index, dtype="datetime64[ns]")
-    parsed.loc[iso_mask] = pd.to_datetime(
-        text.loc[iso_mask], format="mixed", errors="coerce"
-    )
-    parsed.loc[dmy_mask] = pd.to_datetime(
-        text.loc[dmy_mask], format="mixed", dayfirst=True, errors="coerce"
-    )
-    formats = {
-        "year_month_day": int((iso_mask & parsed.notna()).sum()),
-        "day_month_year": int((dmy_mask & parsed.notna()).sum()),
-    }
-    return parsed, formats
-
-
 def prepare_trip_data(
     trips_df: pd.DataFrame,
     trip_files: list[Path],
 ) -> tuple[pd.DataFrame, dict[str, object]]:
     """Limpia el DataFrame consolidado y cuenta salidas por fecha y estación."""
-    # Convierte las columnas necesarias para validar los viajes.
-    trip_id = pd.to_numeric(trips_df["Viaje_Id"], errors="coerce")
-    station_id = pd.to_numeric(trips_df["Origen_Id"], errors="coerce")
-    start_time, timestamp_formats = parse_start_time(trips_df["Inicio_del_viaje"])
 
-    valid_trip_id = trip_id.notna() & trip_id.gt(0) & trip_id.mod(1).eq(0)
-    valid_station_id = station_id.notna() & station_id.gt(0) & station_id.mod(1).eq(0)
-    valid_timestamp = start_time.notna()
-
-    # Cada fila se cuenta una sola vez, según el primer problema que se detecta.
-    invalid_trip_id = ~valid_trip_id
-    invalid_timestamp = valid_trip_id & ~valid_timestamp
-    invalid_station_id = valid_trip_id & valid_timestamp & ~valid_station_id
-    valid = valid_trip_id & valid_timestamp & valid_station_id
-
-    # Los identificadores pueden repetirse en meses distintos; se comparan por mes.
-    trip_month = start_time.dt.strftime("%Y-%m")
-    valid_trip_keys = pd.DataFrame(
-        {"month": trip_month.loc[valid], "trip_id": trip_id.loc[valid]}
-    )
-    duplicate = pd.Series(False, index=trips_df.index)
-    duplicate.loc[valid] = valid_trip_keys.duplicated(keep="first")
-
-    removed = {
-        "invalid_trip_id": int(invalid_trip_id.sum()),
-        "invalid_timestamp": int(invalid_timestamp.sum()),
-        "invalid_station_id": int(invalid_station_id.sum()),
-        "duplicate_trip_ids": int(duplicate.sum()),
-    }
-    keep = valid & ~duplicate
-    clean_trips = pd.DataFrame(
-        {
-            "fecha": start_time.loc[keep].dt.strftime("%Y-%m-%d"),
-            "estacion_id": station_id.loc[keep].astype("int64"),
-        }
-    )
-    if clean_trips.empty:
+    DEFAULT_PIPELINE = [
+        coerce_and_validate_types,
+        drop_duplicate_trip_ids,
+        drop_short_same_station_trips,
+    ]
+    cleaning = run_pipeline(trips_df, DEFAULT_PIPELINE)
+    if cleaning.frame.empty:
         raise typer.BadParameter("No quedaron viajes válidos para preparar el dataset.")
 
     # La tabla final contiene una fila por fecha y estación de origen.
+    daily_trips = pd.DataFrame(
+        {
+            "fecha": cleaning.frame["Inicio_del_viaje"].dt.strftime("%Y-%m-%d"),
+            "estacion_id": cleaning.frame["Origen_Id"].astype("int64"),
+        }
+    )
     prepared_df = (
-        clean_trips.groupby(["fecha", "estacion_id"], as_index=False)
+        daily_trips.groupby(["fecha", "estacion_id"], as_index=False)
         .size()
         .rename(columns={"size": "salidas"})
         .sort_values(["fecha", "estacion_id"])
         .reset_index(drop=True)
     )
-    rows_removed = sum(removed.values())
     periods = [
         path.stem.removeprefix("datos_abiertos_").split("-")[0]
         for path in trip_files
@@ -171,17 +134,16 @@ def prepare_trip_data(
             {"filename": path.name, "bytes": path.stat().st_size}
             for path in trip_files
         ],
-        "rows_read": len(trips_df),
-        "rows_kept": len(trips_df) - rows_removed,
-        "rows_removed": removed,
-        "rows_removed_total": rows_removed,
-        "timestamp_formats": timestamp_formats,
+        "rows_read": cleaning.rows_read,
+        "rows_kept": cleaning.rows_kept,
+        "rows_removed": cleaning.rows_removed,
+        "rows_removed_total": cleaning.rows_removed_total,
+        "timestamp_formats": cleaning.timestamp_formats,
         "output_rows": len(prepared_df),
         "created_at_utc": datetime.now(timezone.utc).isoformat(timespec="seconds"),
         "cleaning_rules": [
-            "Se usan Viaje_Id, Inicio_del_viaje y Origen_Id.",
-            "Se excluyen campos clave vacíos o inválidos.",
-            "Se eliminan identificadores de viaje duplicados dentro del mismo mes.",
+            "Se usan Viaje_Id, Inicio_del_viaje, Fin_del_viaje, Origen_Id y Destino_Id.",
+            *cleaning.cleaning_rules,
             "Se conservan los picos de demanda; no hay un criterio validado para descartarlos.",
             "Los CSV originales no se modifican.",
         ],
@@ -277,7 +239,8 @@ def run(
             "trip_file_period", f"{trip_files[0].stem} to {trip_files[-1].stem}"
         )
         mlflow.log_param(
-            "preparation", "validación y conteo diario por estación de origen"
+            "preparation",
+            "validación, viajes cortos en la misma estación y conteo diario",
         )
         mlflow.log_param("station_catalog", CATALOG_NAME)
         mlflow.log_param("station_catalog_url", CATALOG_URL)
