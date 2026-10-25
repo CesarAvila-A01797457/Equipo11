@@ -12,7 +12,13 @@ import pandas as pd
 import typer
 
 from MiBici.config import PROCESSED_DATA_DIR, PROJ_ROOT, RAW_DATA_DIR
-from MiBici.data_cleaning_stages import DEFAULT_PIPELINE, coerce_and_validate_types, drop_duplicate_trip_ids, drop_short_same_station_trips, run_pipeline
+from MiBici.data_cleaning_stages import (
+    coerce_and_validate_types,
+    drop_duplicate_trip_ids,
+    drop_short_same_station_trips,
+    run_pipeline,
+)
+from MiBici.data_cleaning_stages.coerce_types import parse_start_time
 
 app = typer.Typer(help="Limpia y prepara los datos de viajes de MiBici.")
 CATALOG_NAME = "nomenclatura_2026_09.csv"

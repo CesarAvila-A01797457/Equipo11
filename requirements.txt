@@ -7,4 +7,9 @@ tqdm
 typer
 pandas
 mlflow
+matplotlib
+numpy
+scipy
+scikit-learn
+joblib
 -e .

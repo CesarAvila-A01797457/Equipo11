@@ -1,0 +1,93 @@
+{
+  "dataset_version": "calendar_onehot_v1",
+  "input_sha256": "8bdfbd5c8952f9f261d4dbf950a48756cdc2b56c9c686a4898b63aac95beae83",
+  "input_rows": 1160636,
+  "input_departures": 37725836,
+  "rows_removed": 0,
+  "train_end": "2025-12-31",
+  "validation_end": "2026-06-30",
+  "source_preparation_run_id": "ec55a8421f944f4a913bc064975ca289",
+  "splits": {
+    "train": {
+      "rows": 1052321,
+      "date_start": "2014-12-01",
+      "date_end": "2025-12-31",
+      "departures": 34498507,
+      "stations": 386,
+      "stations_unseen_in_training": 0,
+      "rows_unseen_station": 0,
+      "matrix_shape": [
+        1052321,
+        406
+      ],
+      "matrix_nonzero_values": 4209284,
+      "matrix_storage_mb": 36.129
+    },
+    "validation": {
+      "rows": 66715,
+      "date_start": "2026-01-01",
+      "date_end": "2026-06-30",
+      "departures": 2013146,
+      "stations": 424,
+      "stations_unseen_in_training": 55,
+      "rows_unseen_station": 961,
+      "matrix_shape": [
+        66715,
+        406
+      ],
+      "matrix_nonzero_values": 265899,
+      "matrix_storage_mb": 2.283
+    },
+    "test": {
+      "rows": 41600,
+      "date_start": "2026-07-01",
+      "date_end": "2026-09-30",
+      "departures": 1214183,
+      "stations": 470,
+      "stations_unseen_in_training": 99,
+      "rows_unseen_station": 7875,
+      "matrix_shape": [
+        41600,
+        406
+      ],
+      "matrix_nonzero_values": 158525,
+      "matrix_storage_mb": 1.368
+    }
+  },
+  "predictors_before_encoding": [
+    "estacion_id",
+    "dia_semana",
+    "mes",
+    "anio"
+  ],
+  "target": "salidas",
+  "transformed_columns": 406,
+  "fit_scope": "train_only",
+  "scaled_numeric_features": [
+    "anio"
+  ],
+  "training_year_mean": 2020.878916224232,
+  "training_year_scale": 2.9582358297785953,
+  "target_scaled": false,
+  "zero_imputation": false,
+  "lags_added": false,
+  "rows_conserved": true,
+  "departures_conserved": true,
+  "software_versions": {
+    "pandas": "3.1.0",
+    "numpy": "2.5.4",
+    "scipy": "1.18.1",
+    "scikit-learn": "1.9.1",
+    "joblib": "1.6.0"
+  },
+  "python": "3.13.1",
+  "limitations": [
+    "Solo se representan estación-días presentes; ausencia de fila no equivale a cero.",
+    "No se entrena ni evalúa un modelo predictivo en esta etapa.",
+    "Estaciones no vistas en train tienen ceros en su grupo one-hot; se reportan por separado.",
+    "No se imputa: el agregado validado no tiene campos obligatorios faltantes.",
+    "No se aplica PCA: se conserva identidad categórica y representación dispersa.",
+    "El año representa tendencia; no supone que esa tendencia se extrapole correctamente.",
+    "El calendario es conocido de antemano; no se requieren observaciones futuras para generarlo."
+  ]
+}
