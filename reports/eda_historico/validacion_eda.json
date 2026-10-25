@@ -1,0 +1,11 @@
+{
+  "input_sha256": "89b2abb060a49f70e861d95cb1fe7fe1a3aa1c1148f7052957149d731c795b51",
+  "unit_tests_passed": 4,
+  "notebook_executed_without_errors": true,
+  "code_cells": 9,
+  "figures_visually_reviewed": 8,
+  "mlflow_roundtrip_tested": true,
+  "user_mlflow_registration": "completed_by_user",
+  "original_notebook_unchanged": true,
+  "user_mlflow_run_id": "e3ee05e7f4f84dba8d10221cc38dd655"
+}

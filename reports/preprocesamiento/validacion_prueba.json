@@ -1,0 +1,68 @@
+{
+  "validation_scope": "Ejecución de prueba con copia exacta del agregado histórico; todavía sin registrar esta etapa en el MLflow del usuario.",
+  "input_sha256": "89b2abb060a49f70e861d95cb1fe7fe1a3aa1c1148f7052957149d731c795b51",
+  "input_rows": 1161039,
+  "input_departures": 39078226,
+  "rows_conserved": true,
+  "departures_conserved": true,
+  "transformed_columns": 406,
+  "splits": {
+    "train": {
+      "rows": 1052704,
+      "date_start": "2014-12-01",
+      "date_end": "2025-12-31",
+      "departures": 35716919,
+      "stations": 386,
+      "stations_unseen_in_training": 0,
+      "rows_unseen_station": 0,
+      "matrix_shape": [
+        1052704,
+        406
+      ],
+      "matrix_nonzero_values": 4210816,
+      "matrix_storage_mb": 36.142
+    },
+    "validation": {
+      "rows": 66724,
+      "date_start": "2026-01-01",
+      "date_end": "2026-06-30",
+      "departures": 2090228,
+      "stations": 424,
+      "stations_unseen_in_training": 55,
+      "rows_unseen_station": 964,
+      "matrix_shape": [
+        66724,
+        406
+      ],
+      "matrix_nonzero_values": 265932,
+      "matrix_storage_mb": 2.283
+    },
+    "test": {
+      "rows": 41611,
+      "date_start": "2026-07-01",
+      "date_end": "2026-09-30",
+      "departures": 1271079,
+      "stations": 470,
+      "stations_unseen_in_training": 99,
+      "rows_unseen_station": 7883,
+      "matrix_shape": [
+        41611,
+        406
+      ],
+      "matrix_nonzero_values": 158561,
+      "matrix_storage_mb": 1.368
+    }
+  },
+  "unit_tests_passed": 4,
+  "mlflow_roundtrip_verified": true,
+  "source_hash_mismatch_rejected": true,
+  "fit_scope": "train_only",
+  "validation_python": "3.12.14",
+  "software_versions": {
+    "pandas": "3.0.1",
+    "numpy": "2.3.5",
+    "scipy": "1.18.1",
+    "scikit-learn": "1.9.1",
+    "joblib": "1.6.0"
+  }
+}
