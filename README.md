@@ -177,6 +177,7 @@ entrenamiento y recibe el CSV agregado directamente.
 ```bat
 python -m MiBici.modeling.train --baseline --experiment mibici-fase2-modelado
 for %A in (0.01 0.1 1.0) do python -m MiBici.modeling.train --poisson --alpha %A --experiment mibici-fase2-modelado
+for %C in (1 2 3) do python -m MiBici.modeling.train --random-forest --forest-config %C --experiment mibici-fase2-modelado
 ```
 
 El modelo estima salidas por estación y día. La referencia predice la media del
@@ -184,24 +185,56 @@ entrenamiento. Poisson usa estación, día de la semana, mes y año para estimar
 conteo esperado. El pipeline ajusta la codificación y la escala exclusivamente
 con entrenamiento.
 
+Se comparan tres configuraciones de Random Forest, con criterio Poisson y muestras
+parciales para controlar el costo de entrenamiento:
+
+| Configuración RF | Árboles | Profundidad máxima | Mínimo por hoja | `max_features` | Muestra por árbol |
+|---|---:|---:|---:|---:|---:|
+| 1 | 50 | 12 | 20 | 0.3 | 10 % |
+| 2 | 75 | 16 | 20 | 0.3 | 15 % |
+| 3 | 100 | 20 | 10 | 0.3 | 20 % |
+
+Todas usan `random_state=42`. Cada árbol usa la fracción indicada del conjunto de
+entrenamiento.
+
+Poisson se compara variando su hiperparámetro de regularización `alpha`; las
+demás opciones se mantienen iguales:
+
+| Configuración Poisson | `alpha` | `max_iter` |
+|---|---:|---:|
+| 1 | 0.01 | 500 |
+| 2 | 0.1 | 500 |
+| 3 | 1.0 | 500 |
+
 | Partición | Fechas observadas | Filas |
 |---|---|---:|
 | Entrenamiento | 2014-12-01 a 2025-12-31 | 1,052,321 |
 | Validación | 2026-01-01 a 2026-06-30 | 66,715 |
 | Prueba | 2026-07-01 a 2026-09-30 | 41,600 |
 
-| Configuración | MAE en validación | Sesgo en validación |
-|---|---:|---:|
-| Media histórica | 22.0698 | +2.6079 |
-| Poisson con alpha=0.01 | 12.0651 | +8.2519 |
-| Poisson con alpha=0.1 | 15.7296 | +8.3819 |
-| Poisson con alpha=1.0 | 22.0650 | +7.8112 |
+### Comparación de modelos en validación
+
+| Modelo | Configuración | MAE | Sesgo |
+|---|---|---:|---:|
+| Referencia: media histórica | — | 22.0698 | +2.6079 |
+| Poisson | `alpha=0.01` | **12.0651** | +8.2518 |
+| Poisson | `alpha=0.1` | 15.7296 | +8.3819 |
+| Poisson | `alpha=1.0` | 22.0650 | +7.8112 |
+| Random Forest | Configuración 1 | 18.6756 | +3.4304 |
+| Random Forest | Configuración 2 | 17.8918 | +3.2510 |
+| Random Forest | Configuración 3 | 17.2976 | +3.1154 |
+
+Se elige Poisson con `alpha=0.01` para el paso 3 porque obtuvo el menor MAE en
+validación. Random Forest configuración 3 fue el mejor de sus tres candidatos,
+pero no superó a Poisson. El sesgo se conserva como métrica complementaria: todos
+los modelos sobreestimaron en promedio y Poisson tuvo el mayor sesgo. Las corridas
+y sus parámetros también quedan registrados en el experimento de MLflow.
 
 ### 3. Evaluar en prueba y registrar el pipeline
 
-Se eligió `alpha=0.01` por su menor MAE en validación. Los siguientes comandos
-ajustan ambos modelos con el corte original de entrenamiento y los evalúan
-sobre el mismo periodo de prueba.
+Random Forest se compara en validación en la sección anterior. Poisson con
+`alpha=0.01` obtuvo el menor MAE, así que se conserva el flujo original para la
+prueba: evaluar la referencia y Poisson, y registrar este último.
 
 ```bat
 python -m MiBici.modeling.train --baseline --test --experiment mibici-fase2-modelado
@@ -230,13 +263,12 @@ En el registro de modelos, abre `mibici-poisson` y localiza la versión vinculad
 a la corrida de prueba que guardó el pipeline.
 
 Desde otro CMD con el entorno activado, verifica la recarga con una fila de
-ejemplo. Sustituye `1` en la URI por el número que imprimió tu registro.
+ejemplo. Sustituye `1` por la versión que imprimió tu registro.
 
 ```bat
 python -c "import mlflow, mlflow.sklearn, pandas as pd; mlflow.set_tracking_uri('sqlite:///data/mlflow.db'); model = mlflow.sklearn.load_model('models:/mibici-poisson/1'); row = pd.DataFrame({'estacion_id': ['1'], 'dia_semana': ['0'], 'mes': ['7'], 'anio': [2026]}); print('Salidas estimadas:', model.predict(row)[0])"
 ```
 
-La predicción de referencia para esa fila es aproximadamente 31.48 salidas.
 Cada clon genera sus propios IDs de corrida y versiones en su registro local.
 La base SQLite y los artefactos de `mlruns/` se conservan localmente.
 
