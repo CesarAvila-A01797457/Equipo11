@@ -2,14 +2,14 @@
 
 Se analiza el uso realizado de MiBici por estación y día para preparar un futuro
 modelo de salidas. El agregado cubre 2014-12-01 a 2026-09-30:
-39,078,226 salidas, 1,161,039 estación-días presentes
+37,725,836 salidas, 1,160,636 estación-días presentes
 y 486 IDs de estación distintos. La variación temporal y de
 cobertura exige considerar calendario e historia anterior, sin confundir viajes
 observados con disponibilidad de bicicletas o demanda insatisfecha.
 
 ## 1 Diagnóstico y conciliación
 
-El reporte de preparación registra 39,078,984 viajes originales, 758 exclusiones y 39,078,226 viajes retenidos. La suma de salidas y la cantidad de filas coinciden con ese reporte.
+El reporte de preparación registra 39,078,984 viajes originales, 1,353,148 exclusiones y 37,725,836 viajes retenidos. La suma de salidas y la cantidad de filas coinciden con ese reporte.
 
 Se validaron columnas, fechas, IDs positivos, conteos enteros no negativos y
 unicidad de la clave estación-fecha. Hay 0
@@ -19,7 +19,7 @@ del sistema. Las fechas ausentes se conservan como faltantes; no se imputan a ce
 
 ## 2 Evolución y cobertura
 
-El promedio del sistema es 9,041.7 viajes por día con datos.
+El promedio del sistema es 8,728.8 viajes por día con datos.
 El número diario de estaciones con viajes oscila entre
 64 y 468.
 Los cambios del total deben interpretarse junto con esa cobertura. Una estación
@@ -29,19 +29,19 @@ sin viajes no puede clasificarse como cerrada con estos datos.
 
 | Año | Salidas | Días con datos | Año calendario completo |
 | --- | ---: | ---: | --- |
-| 2014 | 23,967 | 31 | No |
-| 2015 | 469,871 | 365 | Sí |
-| 2016 | 941,918 | 366 | Sí |
-| 2017 | 2,516,534 | 365 | Sí |
-| 2018 | 3,403,485 | 365 | Sí |
-| 2019 | 4,636,652 | 365 | Sí |
-| 2020 | 2,866,072 | 366 | Sí |
-| 2021 | 3,184,410 | 365 | Sí |
-| 2022 | 4,202,942 | 365 | Sí |
-| 2023 | 4,293,115 | 365 | Sí |
-| 2024 | 4,645,921 | 366 | Sí |
-| 2025 | 4,532,032 | 365 | Sí |
-| 2026 | 3,361,307 | 273 | No |
+| 2014 | 21,820 | 31 | No |
+| 2015 | 451,532 | 365 | Sí |
+| 2016 | 913,506 | 366 | Sí |
+| 2017 | 2,454,487 | 365 | Sí |
+| 2018 | 3,312,283 | 365 | Sí |
+| 2019 | 4,496,473 | 365 | Sí |
+| 2020 | 2,770,621 | 366 | Sí |
+| 2021 | 3,066,938 | 365 | Sí |
+| 2022 | 4,008,945 | 365 | Sí |
+| 2023 | 4,104,395 | 365 | Sí |
+| 2024 | 4,489,259 | 366 | Sí |
+| 2025 | 4,408,248 | 365 | Sí |
+| 2026 | 3,227,329 | 273 | No |
 
 ![Totales anuales](figures/02_totales_anuales.png)
 
@@ -65,21 +65,21 @@ duración por su total. El gris representa ausencia de datos, no cero viajes.
 ## 4 Distribución y posibles atípicos
 
 La mediana por estación-día presente es 23.0;
-el percentil 99 es 173.0 y el máximo es
-561. La distribución debe revisarse por estación y
+el percentil 99 es 167.0 y el máximo es
+546. La distribución debe revisarse por estación y
 periodo antes de elegir una función de pérdida o una transformación del objetivo.
 
 ![Distribución y ECDF](figures/05_distribucion_y_ecdf.png)
 
-La regla IQR agrupada señala 55,548 filas fuera de
-[-40.0, 96.0]. Al calcularla dentro de cada
-estación aparecen 8,759 alertas. Son diagnósticos
+La regla IQR agrupada señala 55,003 filas fuera de
+[-38.5, 93.5]. Al calcularla dentro de cada
+estación aparecen 8,586 alertas. Son diagnósticos
 descriptivos: **no se elimina ninguna fila**. La regla agrupada mezcla estaciones
 con niveles de uso y periodos diferentes; un conteo alto puede ser uso real.
 
 ## 5 Diferencias entre estaciones
 
-Las diez estaciones con mayor volumen acumulan 13.7%
+Las diez estaciones con mayor volumen acumulan 13.6%
 de las salidas. El ranking histórico mezcla intensidad de uso y tiempo observado;
 la tabla estaciones.csv incluye días presentes y promedio condicionado a esos días.
 Primera y última fecha observadas no prueban fechas de apertura o cierre.
@@ -95,9 +95,9 @@ por sí mismo cambios de composición de la red.
 
 | Rezago en días | Pares disponibles | Pearson | Spearman |
 | --- | ---: | ---: | ---: |
-| 1 | 4,321 | 0.853 | 0.823 |
+| 1 | 4,321 | 0.851 | 0.820 |
 | 7 | 4,315 | 0.936 | 0.924 |
-| 28 | 4,294 | 0.883 | 0.864 |
+| 28 | 4,294 | 0.882 | 0.864 |
 
 ![Relación temporal](figures/08_relacion_temporal.png)
 
