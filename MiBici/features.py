@@ -102,8 +102,8 @@ def temporal_split(frame, train_end, validation_end):
     return parts
 
 
-def fit_preprocessor(train):
-    transformer = ColumnTransformer(
+def build_preprocessor():
+    return ColumnTransformer(
         [
             (
                 "categoria",
@@ -117,6 +117,10 @@ def fit_preprocessor(train):
         remainder="drop",
         sparse_threshold=1.0,
     )
+
+
+def fit_preprocessor(train):
+    transformer = build_preprocessor()
     # No se incluyen salidas ni fecha sin transformar entre los predictores.
     transformer.fit(train[PREDICTORS])
     return transformer

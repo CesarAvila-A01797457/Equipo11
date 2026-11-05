@@ -6,7 +6,7 @@ septiembre de 2026: **142 CSV mensuales y un catálogo actual**.
 
 La fase implementada comprende descarga, limpieza por bloques, EDA y preprocesamiento.
 Los datos describen viajes realizados; no disponibilidad ni demanda insatisfecha.
-No se entrena un modelo final en esta fase.
+La Fase 2 añade entrenamiento, evaluación temporal y registro del modelo.
 
 ## Entorno
 
@@ -152,6 +152,94 @@ estaciones nuevas y alineación de matrices y etiquetas.
 El EDA de todo el periodo es retrospectivo. Al modelar se deben fijar decisiones
 sin optimizar sobre prueba y usar una evaluación temporal adecuada. No se presentan
 métricas de un modelo final ni se afirma operación para cualquier fecha futura.
+
+## Fase 2: reproducción del entrenamiento
+
+Ejecuta los comandos desde la raíz del repositorio en CMD con el entorno de la
+sección **Entorno** activado. Para replicar el entorno de Windows, usa
+`requirements-lock-windows-py313.txt` según las instrucciones de esa sección.
+
+### 1. Generar el histórico filtrado
+
+```bat
+python -m MiBici.dataset
+python -m MiBici.prepare_data_streaming --chunk-size 25000 --output-dir data/processed/historico_filtrado --experiment-name mibici-fase1-historico-filtrado
+```
+
+El entrenamiento usa el CSV agregado y su reporte de calidad de
+`data/processed/historico_filtrado/`. Si ya los generaste con este flujo, puedes
+reutilizarlos. Consulta el [reporte de preparación](reports/EJECUCION_FILTRADA.md)
+para comprobar los conteos. El pipeline vuelve a ajustar el preprocesador con
+entrenamiento y recibe el CSV agregado directamente.
+
+### 2. Comparar configuraciones en validación
+
+```bat
+python -m MiBici.modeling.train --baseline --experiment mibici-fase2-modelado
+for %A in (0.01 0.1 1.0) do python -m MiBici.modeling.train --poisson --alpha %A --experiment mibici-fase2-modelado
+```
+
+El modelo estima salidas por estación y día. La referencia predice la media del
+entrenamiento. Poisson usa estación, día de la semana, mes y año para estimar un
+conteo esperado. El pipeline ajusta la codificación y la escala exclusivamente
+con entrenamiento.
+
+| Partición | Fechas observadas | Filas |
+|---|---|---:|
+| Entrenamiento | 2014-12-01 a 2025-12-31 | 1,052,321 |
+| Validación | 2026-01-01 a 2026-06-30 | 66,715 |
+| Prueba | 2026-07-01 a 2026-09-30 | 41,600 |
+
+| Configuración | MAE en validación | Sesgo en validación |
+|---|---:|---:|
+| Media histórica | 22.0698 | +2.6079 |
+| Poisson con alpha=0.01 | 12.0651 | +8.2519 |
+| Poisson con alpha=0.1 | 15.7296 | +8.3819 |
+| Poisson con alpha=1.0 | 22.0650 | +7.8112 |
+
+### 3. Evaluar en prueba y registrar el pipeline
+
+Se eligió `alpha=0.01` por su menor MAE en validación. Los siguientes comandos
+ajustan ambos modelos con el corte original de entrenamiento y los evalúan
+sobre el mismo periodo de prueba.
+
+```bat
+python -m MiBici.modeling.train --baseline --test --experiment mibici-fase2-modelado
+python -m MiBici.modeling.train --poisson --alpha 0.01 --test --experiment mibici-fase2-modelado --register-model mibici-poisson
+```
+
+| Modelo | MAE en prueba | Sesgo en prueba |
+|---|---:|---:|
+| Media histórica | 23.0970 | +3.5962 |
+| Poisson con alpha=0.01 | 13.6708 | +7.9757 |
+
+Las métricas se expresan en salidas por estación y día. El sesgo es el promedio
+de predicción menos valor observado. En prueba, Poisson redujo el MAE un 40.8 %
+frente a la referencia y tendió a sobreestimar.
+
+### 4. Comprobar MLflow y recargar el modelo
+
+```bat
+python -m mlflow ui --backend-store-uri sqlite:///data/mlflow.db --host 127.0.0.1 --port 5000
+```
+
+En [MLflow local](http://127.0.0.1:5000), abre el experimento
+`mibici-fase2-modelado` y compara las corridas de validación entre sí y las de
+prueba entre sí. Revisa `input_sha256`, los cortes y las métricas de cada corrida.
+En el registro de modelos, abre `mibici-poisson` y localiza la versión vinculada
+a la corrida de prueba que guardó el pipeline.
+
+Desde otro CMD con el entorno activado, verifica la recarga con una fila de
+ejemplo. Sustituye `1` en la URI por el número que imprimió tu registro.
+
+```bat
+python -c "import mlflow, mlflow.sklearn, pandas as pd; mlflow.set_tracking_uri('sqlite:///data/mlflow.db'); model = mlflow.sklearn.load_model('models:/mibici-poisson/1'); row = pd.DataFrame({'estacion_id': ['1'], 'dia_semana': ['0'], 'mes': ['7'], 'anio': [2026]}); print('Salidas estimadas:', model.predict(row)[0])"
+```
+
+La predicción de referencia para esa fila es aproximadamente 31.48 salidas.
+Cada clon genera sus propios IDs de corrida y versiones en su registro local.
+La base SQLite y los artefactos de `mlruns/` se conservan localmente.
+
 
 ## Colaboración y entrega
 
