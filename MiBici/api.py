@@ -12,7 +12,7 @@ from pydantic import BaseModel, Field, field_validator
 
 from MiBici.config import PROJ_ROOT
 
-DEFAULT_MODEL_URI = "models:/mibici-poisson/1"
+DEFAULT_MODEL_URI = "models:/mibici-poisson/2"
 
 
 class PredictionRequest(BaseModel):
@@ -43,10 +43,23 @@ class PredictionResponse(BaseModel):
     predicciones: list[StationPrediction]
 
 
+def build_prediction_features(target_date: date, station_ids: list[int]) -> pd.DataFrame:
+    """Construye las variables con los mismos nombres y tipos del entrenamiento."""
+    return pd.DataFrame(
+        {
+            "estacion_id": [str(station_id) for station_id in station_ids],
+            "dia_semana": [str(target_date.weekday())] * len(station_ids),
+            "mes": [str(target_date.month)] * len(station_ids),
+            "anio": [target_date.year] * len(station_ids),
+        }
+    )
+
+
 def load_registered_model(model_uri: str, tracking_uri: str | None = None):
     """Carga el pipeline registrado en MLflow una vez al iniciar el servicio."""
     import mlflow
     import mlflow.sklearn
+    from mlflow import MlflowClient
 
     if tracking_uri is None:
         tracking_uri = os.getenv("MLFLOW_TRACKING_URI")
@@ -55,6 +68,24 @@ def load_registered_model(model_uri: str, tracking_uri: str | None = None):
         tracking_uri = f"sqlite:///{database.as_posix()}"
 
     mlflow.set_tracking_uri(tracking_uri)
+
+    # Carga directamente el artefacto de la versión para evitar escribir en MLflow.
+    if model_uri.startswith("models:/"):
+        model_name, separator, version = model_uri.removeprefix("models:/").rpartition(
+            "/"
+        )
+        if separator and version.isdigit():
+            client = MlflowClient()
+            registered_model = client.get_model_version(model_name, version)
+            source = registered_model.source
+
+            # MLflow 3 puede guardar la fuente como un ID de modelo registrado.
+            if source.startswith("models:/m-"):
+                logged_model_id = source.removeprefix("models:/")
+                source = client.get_logged_model(logged_model_id).artifact_location
+
+            return mlflow.sklearn.load_model(source)
+
     return mlflow.sklearn.load_model(model_uri)
 
 
@@ -103,14 +134,7 @@ def create_app(
             raise HTTPException(status_code=503, detail="El modelo no está disponible")
 
         target_date = payload.fecha_objetivo
-        model_input = pd.DataFrame(
-            {
-                "estacion_id": [str(station_id) for station_id in payload.estacion_ids],
-                "dia_semana": [str(target_date.weekday())] * len(payload.estacion_ids),
-                "mes": [str(target_date.month)] * len(payload.estacion_ids),
-                "anio": [target_date.year] * len(payload.estacion_ids),
-            }
-        )
+        model_input = build_prediction_features(target_date, payload.estacion_ids)
         try:
             estimates = np.asarray(model.predict(model_input), dtype=float)
         except Exception as error:

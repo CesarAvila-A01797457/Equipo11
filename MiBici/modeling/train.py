@@ -10,7 +10,7 @@ from sklearn.linear_model import PoissonRegressor
 from sklearn.metrics import mean_absolute_error
 from sklearn.pipeline import Pipeline
 
-from MiBici.config import PROCESSED_DATA_DIR, PROJ_ROOT
+from MiBici.config import PROCESSED_DATA_DIR, PROJ_ROOT, RANDOM_SEED
 from MiBici.features import (
     PREDICTORS,
     build_calendar_features,
@@ -138,7 +138,7 @@ def main(
         elif random_forest:
             model = RandomForestRegressor(
                 criterion="poisson",
-                random_state=42,
+                random_state=RANDOM_SEED,
                 n_jobs=-1,
                 **FOREST_CONFIGS[forest_config],
             )
