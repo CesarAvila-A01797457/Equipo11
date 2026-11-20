@@ -451,22 +451,23 @@ instala solo las dependencias necesarias para la API y el modelo, y ejecuta el p
 con un usuario sin privilegios. `.dockerignore` excluye datos, archivos locales y
 artefactos de desarrollo del contexto de construcción.
 
-### Publicar en Docker Hub
+### Imagen publicada en Docker Hub
 
-Crea en Docker Hub un repositorio llamado `mibici-api` bajo tu usuario u organización.
-Sustituye `<usuario-o-organizacion>` por su namespace. La etiqueta `0.1.0` identifica
-esta versión de la imagen; `latest` apunta a la versión más reciente:
+La imagen está publicada en el repositorio
+[a01797457/mibici-api-equipo11](https://hub.docker.com/r/a01797457/mibici-api-equipo11)
+con las etiquetas `0.1.0` y `latest`. Para descargar y ejecutar la versión documentada:
 
 ```bash
-docker login
-docker tag ml-service:latest <usuario-o-organizacion>/mibici-api:0.1.0
-docker push <usuario-o-organizacion>/mibici-api:0.1.0
-docker tag ml-service:latest <usuario-o-organizacion>/mibici-api:latest
-docker push <usuario-o-organizacion>/mibici-api:latest
+docker pull a01797457/mibici-api-equipo11:0.1.0
+docker run --rm -p 8000:8000 a01797457/mibici-api-equipo11:0.1.0
 ```
 
-Para ejecutar la imagen publicada:
+Para publicar una versión posterior, construye la imagen con una etiqueta nueva y
+actualiza también `latest`:
 
 ```bash
-docker run --rm -p 8000:8000 <usuario-o-organizacion>/mibici-api:0.1.0
+docker tag ml-service:latest a01797457/mibici-api-equipo11:0.1.1
+docker push a01797457/mibici-api-equipo11:0.1.1
+docker tag ml-service:latest a01797457/mibici-api-equipo11:latest
+docker push a01797457/mibici-api-equipo11:latest
 ```
