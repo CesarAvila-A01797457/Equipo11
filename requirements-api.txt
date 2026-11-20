@@ -1,0 +1,13 @@
+cloudpickle==3.1.2
+fastapi==0.159.1
+loguru==0.7.3
+mlflow==3.17.2
+numpy==2.5.4
+pandas==3.0.6
+pydantic==2.14.1
+psutil==7.2.2
+python-dotenv==1.2.4
+rich==15.0.0
+scikit-learn==1.9.1
+scipy==1.18.1
+uvicorn==0.54.0
