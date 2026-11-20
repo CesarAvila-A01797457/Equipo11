@@ -431,3 +431,43 @@ utilizada como artefacto de referencia no tiene un componente aleatorio.
 
 Este procedimiento usa una Cloud PC Windows como entorno separado. La reproducción
 requiere recuperar los contenidos DVC antes de iniciar la API y el verificador.
+
+## Fase 4: contenedor Docker
+
+El contenedor sirve la API FastAPI y empaqueta el artefacto local
+`models/mibici-poisson-v2/`. No necesita iniciar MLflow ni conectarse al registro para
+predecir. Antes de construir la imagen, recupera el modelo con DVC y asegúrate de que
+Docker Desktop esté iniciado:
+
+```bash
+dvc pull models/mibici-poisson-v2.dvc
+docker build -t ml-service:latest .
+docker run --rm -p 8000:8000 ml-service:latest
+```
+
+Consulta `http://127.0.0.1:8000/health` para verificar el servicio y
+`http://127.0.0.1:8000/docs` para probar `POST /predict`. La imagen usa Python 3.14.7,
+instala solo las dependencias necesarias para la API y el modelo, y ejecuta el proceso
+con un usuario sin privilegios. `.dockerignore` excluye datos, archivos locales y
+artefactos de desarrollo del contexto de construcción.
+
+### Imagen publicada en Docker Hub
+
+La imagen está publicada en el repositorio
+[a01797457/mibici-api-equipo11](https://hub.docker.com/r/a01797457/mibici-api-equipo11)
+con las etiquetas `0.1.0` y `latest`. Para descargar y ejecutar la versión documentada:
+
+```bash
+docker pull a01797457/mibici-api-equipo11:0.1.0
+docker run --rm -p 8000:8000 a01797457/mibici-api-equipo11:0.1.0
+```
+
+Para publicar una versión posterior, construye la imagen con una etiqueta nueva y
+actualiza también `latest`:
+
+```bash
+docker tag ml-service:latest a01797457/mibici-api-equipo11:0.1.1
+docker push a01797457/mibici-api-equipo11:0.1.1
+docker tag ml-service:latest a01797457/mibici-api-equipo11:latest
+docker push a01797457/mibici-api-equipo11:latest
+```
