@@ -1,0 +1,6 @@
+outs:
+- md5: 16f9a8d913a6f20b5c238e54783319d3.dir
+  size: 10278
+  nfiles: 7
+  hash: md5
+  path: mibici-poisson-v2

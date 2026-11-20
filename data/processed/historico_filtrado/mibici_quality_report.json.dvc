@@ -1,0 +1,5 @@
+outs:
+- md5: 7235abe95a47fc16828843cea6cd401a
+  size: 37408
+  hash: md5
+  path: mibici_quality_report.json

@@ -1,6 +1,7 @@
 {
   "model_uri": "models:/mibici-poisson/2",
   "mlflow_run_id": "a530ba141c7b4a52b5eec285359fad01",
+  "model_artifact_sha256": "b40f174e3188c6174605d004d0014976f6eb70bffa59b1cfea9b6775bb51b61c",
   "python": "3.14.7",
   "packages": {
     "loguru": "0.7.3",
