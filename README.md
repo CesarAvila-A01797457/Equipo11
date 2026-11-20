@@ -350,10 +350,10 @@ Git. OneDrive sincroniza el contenido de esa carpeta; espera a que termine la
 sincronización antes de ejecutar `dvc pull` en el otro equipo. Evita hacer `dvc push`
 desde los dos equipos al mismo tiempo.
 
-OneDrive todavía no está configurado en este equipo. Por eso, el repositorio ya tiene
-los punteros DVC, pero aún no se ha ejecutado `dvc push` y la Cloud PC todavía no puede
-recuperar los archivos. Primero instala e inicia sesión en OneDrive en la Mac y la
-Cloud PC; después sustituye las rutas de ejemplo por la carpeta sincronizada real.
+OneDrive ya está configurado en la Mac y los archivos se subieron con `dvc push` a
+`MiBici-DVC`. La Cloud PC podrá recuperarlos cuando OneDrive haya terminado de
+sincronizar esa carpeta y se configure allí su ruta local. La ruta de OneDrive no se
+comparte en Git; cada equipo la guarda en `.dvc/config.local`.
 
 En la Mac, instala DVC en un entorno separado para no cambiar las dependencias del
 modelo y configura la ruta de la carpeta sincronizada:
