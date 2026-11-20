@@ -13,4 +13,8 @@ scipy
 scikit-learn
 joblib
 pytest
+fastapi
+pydantic
+uvicorn
+httpx
 -e .
