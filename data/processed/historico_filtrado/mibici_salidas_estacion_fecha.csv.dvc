@@ -1,0 +1,5 @@
+outs:
+- md5: 171e28ac8ba09de64c448ba44012e4e0
+  size: 21419761
+  hash: md5
+  path: mibici_salidas_estacion_fecha.csv

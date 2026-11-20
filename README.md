@@ -336,46 +336,98 @@ La referencia corresponde a la versión 2 del modelo y a la ejecución de prueba
 `models:/mibici-poisson/2`; `reports/fase3/reproducibility_reference.json` guarda
 las métricas, la huella SHA-256 del dataset y tres predicciones de referencia.
 
-El procedimiento usa otro entorno virtual en la misma Mac. Mantiene las dependencias
-aisladas, pero reutiliza la base y el artefacto locales de MLflow, además del dataset
-de `data/processed/historico_filtrado/`.
+El repositorio contiene punteros DVC para el snapshot procesado, su reporte de calidad
+y una copia portable del artefacto del modelo. Los contenidos se recuperan con `dvc
+pull`; la URI y el run originales de MLflow se conservan como referencia, pero la API
+puede cargar el artefacto local sin conectarse a la base MLflow de la Mac.
 
-En una terminal, desde la raíz del repositorio, crea el entorno limpio, instala las
-versiones fijadas e inicia la API con el modelo registrado:
+#### Sincronizar datos y modelo con DVC
+
+DVC mantiene en Git los archivos `.dvc` y guarda los contenidos en un remoto. Para este
+proyecto se usa una carpeta dedicada dentro de OneDrive, sincronizada en ambos equipos.
+Cada equipo configura su propia ruta local en `.dvc/config.local`, que no se sube a
+Git. OneDrive sincroniza el contenido de esa carpeta; espera a que termine la
+sincronización antes de ejecutar `dvc pull` en el otro equipo. Evita hacer `dvc push`
+desde los dos equipos al mismo tiempo.
+
+OneDrive todavía no está configurado en este equipo. Por eso, el repositorio ya tiene
+los punteros DVC, pero aún no se ha ejecutado `dvc push` y la Cloud PC todavía no puede
+recuperar los archivos. Primero instala e inicia sesión en OneDrive en la Mac y la
+Cloud PC; después sustituye las rutas de ejemplo por la carpeta sincronizada real.
+
+En la Mac, instala DVC en un entorno separado para no cambiar las dependencias del
+modelo y configura la ruta de la carpeta sincronizada:
 
 ```bash
-python3.14 -m venv .venv-repro
-source .venv-repro/bin/activate
-python -m pip install -r requirements-lock-macos-py314.txt
-export MIBICI_MODEL_URI="models:/mibici-poisson/2"
+python3.14 -m venv .venv-dvc
+source .venv-dvc/bin/activate
+python -m pip install -r requirements-dvc.txt
+dvc remote add --local -d onedrive "/ruta/local/de/OneDrive/MiBici-DVC"
+dvc push
+```
+
+Los datos versionados son `data/processed/historico_filtrado/mibici_salidas_estacion_fecha.csv`
+y `mibici_quality_report.json`. El artefacto está en `models/mibici-poisson-v2/`.
+Sus punteros son `data/processed/historico_filtrado/*.dvc` y
+`models/mibici-poisson-v2.dvc`.
+
+En la Cloud PC Windows, después de clonar la misma rama y de tener OneDrive instalado
+y sincronizado, configura la ruta local equivalente y recupera los archivos:
+
+```powershell
+python -m venv .venv-dvc
+.\.venv-dvc\Scripts\Activate.ps1
+python -m pip install -r requirements-dvc.txt
+dvc remote add --local -d onedrive "C:\Users\<usuario>\OneDrive\MiBici-DVC"
+dvc pull
+```
+
+La ubicación de OneDrive varía entre cuentas; reemplaza las rutas de ejemplo por la
+carpeta real en cada equipo. DVC trata esa carpeta sincronizada como un remoto del
+sistema de archivos, no como una conexión directa a la API de OneDrive. [DVC admite
+remotos de sistema de archivos](https://doc.dvc.org/user-guide/data-management/remote-storage).
+
+#### Ejecutar la comprobación
+
+En la Cloud PC, crea el entorno de aplicación con Python y dependencias compatibles
+con el artefacto. El modelo se guardó con Python 3.14.7, scikit-learn 1.9.1 y las
+versiones que aparecen en `models/mibici-poisson-v2/requirements.txt`. Usa esas
+versiones para cargar el artefacto; el lock de Windows/Python 3.13 corresponde a otro
+entorno y no debe usarse para esta comprobación. Inicia la API con el modelo que DVC
+recuperó:
+
+```powershell
+python -m venv .venv-repro
+.\.venv-repro\Scripts\Activate.ps1
+python -m pip install -r requirements.txt
+$env:MIBICI_MODEL_URI = "models/mibici-poisson-v2"
 python -m uvicorn MiBici.api:app --host 127.0.0.1 --port 8001
 ```
 
-En una segunda terminal, desde la misma raíz del repositorio, activa el entorno y
-compara las métricas de prueba, las predicciones directas del modelo y la respuesta
-del endpoint:
+En una segunda terminal, activa el mismo entorno y compara las métricas de prueba, las
+predicciones directas y la respuesta del servicio con la URI original de MLflow:
 
-```bash
-source .venv-repro/bin/activate
-export MIBICI_MODEL_URI="models:/mibici-poisson/2"
-python -m MiBici.reproducibility --model-uri "models:/mibici-poisson/2" --api-url http://127.0.0.1:8001/predict
+```powershell
+.\.venv-repro\Scripts\Activate.ps1
+$env:MIBICI_MODEL_URI = "models/mibici-poisson-v2"
+python -m MiBici.reproducibility `
+  --model-uri "models/mibici-poisson-v2" `
+  --reference-model-uri "models:/mibici-poisson/2" `
+  --api-url http://127.0.0.1:8001/predict
 ```
 
-El comando compara las versiones de Python y paquetes, la huella SHA-256 del dataset,
-el MAE y el sesgo en prueba, y las tres predicciones del ejemplo, con tolerancia
-absoluta de `0.0001`. Guarda el resultado en
-`reports/fase3/reproducibility_clean_env.json` y termina con código distinto de cero
-si alguna comparación no coincide. No entrena el modelo ni crea corridas en MLflow.
-El reporte generado puede versionarse en Git como evidencia.
+El comando compara la huella SHA-256 del dataset, el número de filas, el MAE y el
+sesgo en prueba, y las tres predicciones del ejemplo, con tolerancia absoluta de
+`0.0001`. También reporta las diferencias de versiones entre entornos. Guarda el
+resultado en `reports/fase3/reproducibility_clean_env.json`. No entrena ni crea
+corridas de MLflow. El reporte puede versionarse en Git como evidencia.
 
-La API resuelve la versión registrada al artefacto que MLflow ya guardó y lo carga
-directamente. Así, iniciar el servicio o verificarlo no modifica el artefacto ni crea
-una nueva corrida.
+La verificación carga desde DVC una copia del artefacto asociado a
+`models:/mibici-poisson/2`; no necesita acceder al registro MLflow de la Mac. DVC
+versiona también el snapshot exacto del dataset usado en la evaluación.
 
 El Random Forest usa `RANDOM_SEED = 42` en `MiBici/config.py`; la regresión Poisson
 utilizada como artefacto de referencia no tiene un componente aleatorio.
 
-Este procedimiento demuestra aislamiento de dependencias en la misma máquina. Para
-ejecutarlo en otra máquina también deben estar accesibles el registro y el artefacto
-de MLflow, además del dataset cuya huella se compara. Copiar solo la base SQLite no
-incluye los archivos del modelo.
+Este procedimiento usa una Cloud PC Windows como entorno separado. La reproducción
+requiere recuperar los contenidos DVC antes de iniciar la API y el verificador.

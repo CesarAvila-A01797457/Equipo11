@@ -2,6 +2,7 @@
 
 import argparse
 from datetime import date
+import hashlib
 import json
 import math
 from pathlib import Path
@@ -41,6 +42,19 @@ def compare_values(actual, expected, tolerance):
     )
 
 
+def sha256_directory(directory):
+    """Calcula una huella estable para los archivos de una carpeta."""
+    directory = Path(directory)
+    digest = hashlib.sha256()
+    for file_path in sorted(path for path in directory.rglob("*") if path.is_file()):
+        relative_path = file_path.relative_to(directory).as_posix()
+        digest.update(relative_path.encode("utf-8"))
+        with file_path.open("rb") as file:
+            for chunk in iter(lambda: file.read(1024 * 1024), b""):
+                digest.update(chunk)
+    return digest.hexdigest()
+
+
 def request_api_prediction(api_url, payload):
     """Consulta el servicio activo sin crear corridas de MLflow."""
     request = Request(
@@ -55,13 +69,14 @@ def request_api_prediction(api_url, payload):
 
 def run_check(
     model_uri,
+    reference_model_uri,
     reference_path,
     input_path,
     quality_report_path,
     output_path,
     api_url,
 ):
-    """Evalúa el artefacto y el endpoint contra métricas y salidas de referencia."""
+    """Evalúa el modelo local y el endpoint contra la referencia registrada."""
     reference = json.loads(Path(reference_path).read_text(encoding="utf-8"))
     tolerance = reference["tolerance"]
 
@@ -75,6 +90,8 @@ def run_check(
     )
 
     model = load_registered_model(model_uri)
+    model_path = Path(model_uri)
+    model_hash = sha256_directory(model_path) if model_path.is_dir() else None
     test = splits["test"]
     test_predictions = np.asarray(model.predict(test[PREDICTORS]), dtype=float)
     metrics = calculate_metrics(test["salidas"].to_numpy(), test_predictions)
@@ -98,7 +115,12 @@ def run_check(
     }
 
     comparisons = {
-        "model_uri_matches": model_uri == reference["model_uri"],
+        "reference_model_uri_matches": reference_model_uri == reference["model_uri"],
+        "model_artifact_hash_matches": (
+            model_hash == reference["model_artifact_sha256"]
+            if model_hash is not None
+            else None
+        ),
         "python_version_matches": platform.python_version() == reference["python"],
         "package_versions_match": current_packages == reference_packages,
         "dataset_hash_matches": dataset_hash == reference["dataset_sha256"],
@@ -119,8 +141,17 @@ def run_check(
         ),
     }
 
+    result_checks = {
+        name: value
+        for name, value in comparisons.items()
+        if name not in {"python_version_matches", "package_versions_match"}
+        and value is not None
+    }
+
     report = {
-        "model_uri": model_uri,
+        "model_uri": reference_model_uri,
+        "model_location": model_uri,
+        "model_artifact_sha256": model_hash,
         "reference_run_id": reference["mlflow_run_id"],
         "python": platform.python_version(),
         "packages": current_packages,
@@ -134,7 +165,11 @@ def run_check(
         },
         "tolerance": tolerance,
         "comparisons": comparisons,
-        "reproducible": all(comparisons.values()),
+        "environment_matches_reference": all(
+            comparisons[name]
+            for name in ("python_version_matches", "package_versions_match")
+        ),
+        "reproducible": all(result_checks.values()),
     }
     output_path = Path(output_path)
     output_path.parent.mkdir(parents=True, exist_ok=True)
@@ -143,7 +178,8 @@ def run_check(
         encoding="utf-8",
     )
 
-    print(f"Modelo: {model_uri}")
+    print(f"Modelo de referencia: {reference_model_uri}")
+    print(f"Modelo cargado desde: {model_uri}")
     print(f"MAE en prueba: {metrics['mae']:.6f}")
     print(f"Sesgo en prueba: {metrics['bias']:+.6f}")
     print(f"Predicciones de la API: {api_predictions}")
@@ -155,14 +191,20 @@ def run_check(
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--model-uri", default=DEFAULT_MODEL_URI)
+    parser.add_argument(
+        "--reference-model-uri",
+        help="URI MLflow original que identifica el modelo usado como referencia.",
+    )
     parser.add_argument("--reference", type=Path, default=DEFAULT_REFERENCE)
     parser.add_argument("--input-path", type=Path, default=DEFAULT_INPUT)
     parser.add_argument("--quality-report", type=Path, default=DEFAULT_QUALITY_REPORT)
     parser.add_argument("--output-path", type=Path, default=DEFAULT_OUTPUT)
     parser.add_argument("--api-url", default="http://127.0.0.1:8000/predict")
     args = parser.parse_args()
+    reference_model_uri = args.reference_model_uri or args.model_uri
     report = run_check(
         model_uri=args.model_uri,
+        reference_model_uri=reference_model_uri,
         reference_path=args.reference,
         input_path=args.input_path,
         quality_report_path=args.quality_report,
