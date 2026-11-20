@@ -12,4 +12,5 @@ numpy
 scipy
 scikit-learn
 joblib
+pytest
 -e .
