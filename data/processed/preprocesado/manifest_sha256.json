@@ -1,0 +1,14 @@
+{
+  "X_test.npz": "f8818a641555c8331c01a1e5674ff66fb91cc02d21aab96c2cf54fd4e3daac67",
+  "X_train.npz": "1ebb0d61ef4da7b85b21c9e63166cb1728421313a09394b83b395ed3aefdff9f",
+  "X_validation.npz": "0953936dae1fdaa36a7536b29fa6d250e05111623f54efe6137f888094a08d23",
+  "columnas_transformadas.json": "b3115fc1234dca22d45b85e1a4ce96cdb8a9d8294818a1d38d97f0c1c2e126c9",
+  "preprocessor.joblib": "b93e72ba202d86b4e5bfc24b8c99553657f069e3550fd9d7355b546243bf9c18",
+  "reporte_preprocesamiento.json": "b44c5b89aa06eb6f048a7c935c7f65390024594e56f0f6861b678cf5d386c100",
+  "test.csv": "a4e45067ef6c4eb9f002c94da916f8bd257b198c95bf3355688740ea4d11db7f",
+  "train.csv": "4032886e88a735bb2987afa443f30d1654231993364cfe24102ea874ff70b3f4",
+  "validation.csv": "abae78ce4a24b4cbad98053fe06c1bfec5f5306264b6c5b7944af7a12949de4b",
+  "y_test.npy": "80b079beb3b5a50b4db385bebbae9c71db950cc7ecb01cd39528be4b4b31a512",
+  "y_train.npy": "d997a2030409635be0a5201efcc692b885add652cc7d8fc9f4b7eeda7bf0bb36",
+  "y_validation.npy": "35a8e910f06ed8a362371e5d93706c31e072ef3e1cb881649b6361380820eab5"
+}
