@@ -379,15 +379,3 @@ Este procedimiento demuestra aislamiento de dependencias en la misma máquina. P
 ejecutarlo en otra máquina también deben estar accesibles el registro y el artefacto
 de MLflow, además del dataset cuya huella se compara. Copiar solo la base SQLite no
 incluye los archivos del modelo.
-
-
-## Colaboración y entrega
-
-Trabajar en ramas y registrar contribuciones reales de cada integrante. Antes de
-publicar, revisar `git status` y los archivos seleccionados. Los CSV originales,
-entornos y base de MLflow no se suben a Git.
-
-La entrega académica debe incluir el PDF **Fase 1_Equipo11.pdf**, el ML Canvas,
-las cinco etapas, evidencias de MLflow, enlace al repositorio con actividad de todos
-y explicación de roles e interacción. La presentación se mantiene como entregable
-separado del código.
