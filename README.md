@@ -136,18 +136,20 @@ se deben contrastar las huellas y usar las mismas fuentes y versiones de softwar
 - `MiBici/prepare_data_streaming.py`: validación, deduplicación y agregado por bloques.
 - `MiBici/eda.py`: análisis, gráficos, tablas y reporte; `plots.py` delega en este módulo.
 - `MiBici/features.py`: calendario, splits temporales y transformador.
-- `tests/`: validaciones, conservación, ausencia de fuga y coherencia de artefactos.
+- `tests/`: limpieza, EDA, preprocesamiento, métricas e integración hasta la evaluación.
 - `references/`: fuentes y documentación metodológica.
 - `reports/`: evidencia agregada y resultados para la presentación.
 
-```bat
-python -m unittest discover -s tests -v
+Instala las dependencias del proyecto y ejecuta todas las pruebas desde la raíz:
+
+```bash
+pytest -q
 ```
 
-La suite actual contiene nueve pruebas. No depende de descargar el histórico:
-utiliza fixtures pequeños y comprueba errores, fechas ausentes sin imputación,
-correlaciones indefinidas, conservación del objetivo, ajuste solo con train,
-estaciones nuevas y alineación de matrices y etiquetas.
+La suite combina las pruebas existentes de limpieza, EDA y preprocesamiento con
+pruebas del cálculo de métricas y una integración del flujo CSV → preparación de
+variables → entrenamiento → predicción → evaluación. Utiliza archivos pequeños y
+no descarga el histórico de MiBici.
 
 El EDA de todo el periodo es retrospectivo. Al modelar se deben fijar decisiones
 sin optimizar sobre prueba y usar una evaluación temporal adecuada. No se presentan

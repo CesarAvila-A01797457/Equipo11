@@ -2,6 +2,7 @@
 
 from pathlib import Path
 
+import numpy as np
 import typer
 from sklearn.dummy import DummyRegressor
 from sklearn.ensemble import RandomForestRegressor
@@ -44,6 +45,32 @@ FOREST_CONFIGS = {
         "max_samples": 0.2,
     },
 }
+
+
+def build_model_pipeline(model):
+    """Combina el preprocesamiento y el modelo para entrenar e inferir."""
+    return Pipeline(
+        [
+            ("preprocessor", build_preprocessor()),
+            ("model", model),
+        ]
+    )
+
+
+def calculate_metrics(actual, predictions):
+    """Calcula MAE y sesgo; el sesgo positivo indica sobreestimación."""
+    actual = np.asarray(actual, dtype=float)
+    predictions = np.asarray(predictions, dtype=float)
+    if actual.ndim != 1 or predictions.ndim != 1 or actual.shape != predictions.shape:
+        raise ValueError("actual y predictions deben ser vectores del mismo tamaño")
+    if actual.size == 0:
+        raise ValueError("No se pueden calcular métricas sin observaciones")
+    if not np.isfinite(actual).all() or not np.isfinite(predictions).all():
+        raise ValueError("actual y predictions deben contener valores finitos")
+    return {
+        "mae": float(mean_absolute_error(actual, predictions)),
+        "bias": float(np.mean(predictions - actual)),
+    }
 
 
 @app.command()
@@ -123,17 +150,12 @@ def main(
         split = "test" if test else "validation"
         evaluation = parts[split]
         period = "prueba" if test else "validación"
-        pipeline = Pipeline(
-            [
-                ("preprocessor", build_preprocessor()),
-                ("model", model),
-            ]
-        )
+        pipeline = build_model_pipeline(model)
         pipeline.fit(train[PREDICTORS], train["salidas"])
         predictions = pipeline.predict(evaluation[PREDICTORS])
         actual = evaluation["salidas"].to_numpy()
-        mae = mean_absolute_error(actual, predictions)
-        bias = (predictions - actual).mean()
+        metrics = calculate_metrics(actual, predictions)
+        mae, bias = metrics["mae"], metrics["bias"]
         if poisson:
             typer.echo(f"Regresión de Poisson (alpha={alpha:g})")
         elif random_forest:

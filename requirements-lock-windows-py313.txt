@@ -107,3 +107,6 @@ Werkzeug==3.1.9
 win32_setctime==1.2.0
 yarl==1.25.1
 zipp==4.1.2
+iniconfig==2.3.1
+pluggy==1.7.0
+pytest==9.2.0
