@@ -274,6 +274,60 @@ python -c "import mlflow, mlflow.sklearn, pandas as pd; mlflow.set_tracking_uri(
 Cada clon genera sus propios IDs de corrida y versiones en su registro local.
 La base SQLite y los artefactos de `mlruns/` se conservan localmente.
 
+## Fase 3: servicio de predicción con FastAPI
+
+El endpoint `POST /predict` recibe una fecha y una lista de IDs de estación. La API
+deriva el día de la semana, el mes y el año, y carga el pipeline completo (preprocesador
+y modelo) desde MLflow al iniciar. El URI registrado actualmente es
+`models:/mibici-poisson/1`. La API no entrena ni registra modelos al recibir solicitudes.
+
+Desde la raíz del proyecto y con el entorno virtual activo, instala las dependencias
+actualizadas y ejecuta el servicio:
+
+```bash
+python -m pip install -r requirements.txt
+python -m uvicorn MiBici.api:app --host 127.0.0.1 --port 8000
+```
+
+La documentación interactiva queda en `http://127.0.0.1:8000/docs`; el estado del
+servicio se consulta en `http://127.0.0.1:8000/health`.
+
+La API usa `models:/mibici-poisson/1` por defecto. Para seleccionar otra versión,
+configura `MIBICI_MODEL_URI`, por ejemplo `models:/mibici-poisson/2`. Para apuntar a
+otro almacén de MLflow, configura `MLFLOW_TRACKING_URI`. Si no se define, utiliza
+`data/mlflow.db` del repositorio. El registro y los artefactos deben estar accesibles
+desde el entorno donde se inicia el servicio.
+
+### Schema de `POST /predict`
+
+Solicitud JSON:
+
+```json
+{
+  "fecha_objetivo": "2026-11-20",
+  "estacion_ids": [1, 2, 3]
+}
+```
+
+Respuesta JSON:
+
+```json
+{
+  "fecha_objetivo": "2026-11-20",
+  "predicciones": [
+    {"estacion_id": 1, "salidas_estimadas": 12.5},
+    {"estacion_id": 2, "salidas_estimadas": 8.2},
+    {"estacion_id": 3, "salidas_estimadas": 4.7}
+  ]
+}
+```
+
+`fecha_objetivo` debe ser una fecha válida en formato ISO (`AAAA-MM-DD`). `estacion_ids`
+debe contener IDs enteros positivos, únicos y no vacíos. FastAPI documenta los tipos y
+las validaciones en OpenAPI/Swagger. Las estaciones no presentes durante el
+entrenamiento se codifican como categorías desconocidas; su estimación puede ser menos
+representativa.
+
 
 ## Colaboración y entrega
 
