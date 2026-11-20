@@ -1,0 +1,599 @@
+{
+  "source": "MiBici Open Data",
+  "source_page": "https://mibici.net/en/open-data/",
+  "period_start": "2014_12",
+  "period_end": "2026_09",
+  "input_files": 142,
+  "files": [
+    {
+      "filename": "datos_abiertos_2014_12.csv",
+      "bytes": 1585143
+    },
+    {
+      "filename": "datos_abiertos_2015_01.csv",
+      "bytes": 2135956
+    },
+    {
+      "filename": "datos_abiertos_2015_02.csv",
+      "bytes": 2205694
+    },
+    {
+      "filename": "datos_abiertos_2015_03.csv",
+      "bytes": 2437331
+    },
+    {
+      "filename": "datos_abiertos_2015_04.csv",
+      "bytes": 2355458
+    },
+    {
+      "filename": "datos_abiertos_2015_05.csv",
+      "bytes": 2525943
+    },
+    {
+      "filename": "datos_abiertos_2015_06.csv",
+      "bytes": 2549242
+    },
+    {
+      "filename": "datos_abiertos_2015_07.csv",
+      "bytes": 2584955
+    },
+    {
+      "filename": "datos_abiertos_2015_08.csv",
+      "bytes": 2697140
+    },
+    {
+      "filename": "datos_abiertos_2015_09.csv",
+      "bytes": 2979778
+    },
+    {
+      "filename": "datos_abiertos_2015_10.csv",
+      "bytes": 3227177
+    },
+    {
+      "filename": "datos_abiertos_2015_11.csv",
+      "bytes": 3293119
+    },
+    {
+      "filename": "datos_abiertos_2015_12.csv",
+      "bytes": 2757061
+    },
+    {
+      "filename": "datos_abiertos_2016_01-1.csv",
+      "bytes": 3069935
+    },
+    {
+      "filename": "datos_abiertos_2016_02.csv",
+      "bytes": 3255435
+    },
+    {
+      "filename": "datos_abiertos_2016_03.csv",
+      "bytes": 3372333
+    },
+    {
+      "filename": "datos_abiertos_2016_04.csv",
+      "bytes": 3914351
+    },
+    {
+      "filename": "datos_abiertos_2016_05.csv",
+      "bytes": 4238232
+    },
+    {
+      "filename": "datos_abiertos_2016_06.csv",
+      "bytes": 4147967
+    },
+    {
+      "filename": "datos_abiertos_2016_07.csv",
+      "bytes": 3942899
+    },
+    {
+      "filename": "datos_abiertos_2016_08.csv",
+      "bytes": 5205761
+    },
+    {
+      "filename": "datos_abiertos_2016_09.csv",
+      "bytes": 7568034
+    },
+    {
+      "filename": "datos_abiertos_2016_10.csv",
+      "bytes": 9052817
+    },
+    {
+      "filename": "datos_abiertos_2016_11.csv",
+      "bytes": 9322975
+    },
+    {
+      "filename": "datos_abiertos_2016_12.csv",
+      "bytes": 8040559
+    },
+    {
+      "filename": "datos_abiertos_2017_01.csv",
+      "bytes": 11467052
+    },
+    {
+      "filename": "datos_abiertos_2017_02.csv",
+      "bytes": 12226617
+    },
+    {
+      "filename": "datos_abiertos_2017_03.csv",
+      "bytes": 14681573
+    },
+    {
+      "filename": "datos_abiertos_2017_04-1.csv",
+      "bytes": 11838358
+    },
+    {
+      "filename": "datos_abiertos_2017_05.csv",
+      "bytes": 14749199
+    },
+    {
+      "filename": "datos_abiertos_2017_06.csv",
+      "bytes": 14283593
+    },
+    {
+      "filename": "datos_abiertos_2017_07.csv",
+      "bytes": 14526701
+    },
+    {
+      "filename": "datos_abiertos_2017_08.csv",
+      "bytes": 15929140
+    },
+    {
+      "filename": "datos_abiertos_2017_09.csv",
+      "bytes": 16660794
+    },
+    {
+      "filename": "datos_abiertos_2017_10.csv",
+      "bytes": 18663848
+    },
+    {
+      "filename": "datos_abiertos_2017_11.csv",
+      "bytes": 18078857
+    },
+    {
+      "filename": "datos_abiertos_2017_12.csv",
+      "bytes": 13971923
+    },
+    {
+      "filename": "datos_abiertos_2018_01.csv",
+      "bytes": 17457261
+    },
+    {
+      "filename": "datos_abiertos_2018_02.csv",
+      "bytes": 18057165
+    },
+    {
+      "filename": "datos_abiertos_2018_03.csv",
+      "bytes": 19911133
+    },
+    {
+      "filename": "datos_abiertos_2018_04.csv",
+      "bytes": 19991931
+    },
+    {
+      "filename": "datos_abiertos_2018_05.csv",
+      "bytes": 21193313
+    },
+    {
+      "filename": "datos_abiertos_2018_06.csv",
+      "bytes": 18380195
+    },
+    {
+      "filename": "datos_abiertos_2018_07.csv",
+      "bytes": 18533627
+    },
+    {
+      "filename": "datos_abiertos_2018_08.csv",
+      "bytes": 20966229
+    },
+    {
+      "filename": "datos_abiertos_2018_09.csv",
+      "bytes": 20462231
+    },
+    {
+      "filename": "datos_abiertos_2018_10.csv",
+      "bytes": 23067005
+    },
+    {
+      "filename": "datos_abiertos_2018_11.csv",
+      "bytes": 21860959
+    },
+    {
+      "filename": "datos_abiertos_2018_12.csv",
+      "bytes": 20178561
+    },
+    {
+      "filename": "datos_abiertos_2019_01.csv",
+      "bytes": 28593749
+    },
+    {
+      "filename": "datos_abiertos_2019_02.csv",
+      "bytes": 27487069
+    },
+    {
+      "filename": "datos_abiertos_2019_03.csv",
+      "bytes": 29949916
+    },
+    {
+      "filename": "datos_abiertos_2019_04.csv",
+      "bytes": 25943320
+    },
+    {
+      "filename": "datos_abiertos_2019_05.csv",
+      "bytes": 29533389
+    },
+    {
+      "filename": "datos_abiertos_2019_06.csv",
+      "bytes": 26932225
+    },
+    {
+      "filename": "datos_abiertos_2019_07.csv",
+      "bytes": 26988717
+    },
+    {
+      "filename": "datos_abiertos_2019_08.csv",
+      "bytes": 28543414
+    },
+    {
+      "filename": "datos_abiertos_2019_09.csv",
+      "bytes": 27612938
+    },
+    {
+      "filename": "datos_abiertos_2019_10.csv",
+      "bytes": 30331443
+    },
+    {
+      "filename": "datos_abiertos_2019_11.csv",
+      "bytes": 27126362
+    },
+    {
+      "filename": "datos_abiertos_2019_12.csv",
+      "bytes": 22779044
+    },
+    {
+      "filename": "datos_abiertos_2020_01.csv",
+      "bytes": 25868844
+    },
+    {
+      "filename": "datos_abiertos_2020_02.csv",
+      "bytes": 26421202
+    },
+    {
+      "filename": "datos_abiertos_2020_03.csv",
+      "bytes": 21320439
+    },
+    {
+      "filename": "datos_abiertos_2020_04.csv",
+      "bytes": 9291472
+    },
+    {
+      "filename": "datos_abiertos_2020_05.csv",
+      "bytes": 11528686
+    },
+    {
+      "filename": "datos_abiertos_2020_06.csv",
+      "bytes": 14083829
+    },
+    {
+      "filename": "datos_abiertos_2020_07.csv",
+      "bytes": 15647707
+    },
+    {
+      "filename": "datos_abiertos_2020_08.csv",
+      "bytes": 16547348
+    },
+    {
+      "filename": "datos_abiertos_2020_09.csv",
+      "bytes": 16403966
+    },
+    {
+      "filename": "datos_abiertos_2020_10.csv",
+      "bytes": 17571178
+    },
+    {
+      "filename": "datos_abiertos_2020_11.csv",
+      "bytes": 15854220
+    },
+    {
+      "filename": "datos_abiertos_2020_12.csv",
+      "bytes": 15336247
+    },
+    {
+      "filename": "datos_abiertos_2021_01.csv",
+      "bytes": 14165086
+    },
+    {
+      "filename": "datos_abiertos_2021_02.csv",
+      "bytes": 14568116
+    },
+    {
+      "filename": "datos_abiertos_2021_03.csv",
+      "bytes": 17845725
+    },
+    {
+      "filename": "datos_abiertos_2021_04.csv",
+      "bytes": 17303619
+    },
+    {
+      "filename": "datos_abiertos_2021_05.csv",
+      "bytes": 19402743
+    },
+    {
+      "filename": "datos_abiertos_2021_06.csv",
+      "bytes": 23460848
+    },
+    {
+      "filename": "datos_abiertos_2021_07.csv",
+      "bytes": 23114373
+    },
+    {
+      "filename": "datos_abiertos_2021_08.csv",
+      "bytes": 23562224
+    },
+    {
+      "filename": "datos_abiertos_2021_09.csv",
+      "bytes": 23304137
+    },
+    {
+      "filename": "datos_abiertos_2021_10.csv",
+      "bytes": 27472372
+    },
+    {
+      "filename": "datos_abiertos_2021_11.csv",
+      "bytes": 27816786
+    },
+    {
+      "filename": "datos_abiertos_2021_12.csv",
+      "bytes": 25776493
+    },
+    {
+      "filename": "datos_abiertos_2022_01.csv",
+      "bytes": 25004016
+    },
+    {
+      "filename": "datos_abiertos_2022_02.csv",
+      "bytes": 27080225
+    },
+    {
+      "filename": "datos_abiertos_2022_03.csv",
+      "bytes": 32593780
+    },
+    {
+      "filename": "datos_abiertos_2022_04.csv",
+      "bytes": 28501508
+    },
+    {
+      "filename": "datos_abiertos_2022_05.csv",
+      "bytes": 32270768
+    },
+    {
+      "filename": "datos_abiertos_2022_06.csv",
+      "bytes": 30356726
+    },
+    {
+      "filename": "datos_abiertos_2022_07.csv",
+      "bytes": 28873086
+    },
+    {
+      "filename": "datos_abiertos_2022_08.csv",
+      "bytes": 31372853
+    },
+    {
+      "filename": "datos_abiertos_2022_09.csv",
+      "bytes": 32407581
+    },
+    {
+      "filename": "datos_abiertos_2022_10.csv",
+      "bytes": 33717979
+    },
+    {
+      "filename": "datos_abiertos_2022_11.csv",
+      "bytes": 32948999
+    },
+    {
+      "filename": "datos_abiertos_2022_12.csv",
+      "bytes": 27866470
+    },
+    {
+      "filename": "datos_abiertos_2023_01.csv",
+      "bytes": 31640907
+    },
+    {
+      "filename": "datos_abiertos_2023_02.csv",
+      "bytes": 30723780
+    },
+    {
+      "filename": "datos_abiertos_2023_03.csv",
+      "bytes": 34808436
+    },
+    {
+      "filename": "datos_abiertos_2023_04.csv",
+      "bytes": 28813118
+    },
+    {
+      "filename": "datos_abiertos_2023_05.csv",
+      "bytes": 31498531
+    },
+    {
+      "filename": "datos_abiertos_2023_06.csv",
+      "bytes": 29369568
+    },
+    {
+      "filename": "datos_abiertos_2023_07.csv",
+      "bytes": 28686693
+    },
+    {
+      "filename": "datos_abiertos_2023_08.csv",
+      "bytes": 30690816
+    },
+    {
+      "filename": "datos_abiertos_2023_09.csv",
+      "bytes": 31478963
+    },
+    {
+      "filename": "datos_abiertos_2023_10.csv",
+      "bytes": 33158908
+    },
+    {
+      "filename": "datos_abiertos_2023_11.csv",
+      "bytes": 25027708
+    },
+    {
+      "filename": "datos_abiertos_2023_12.csv",
+      "bytes": 27182929
+    },
+    {
+      "filename": "datos_abiertos_2024_01.csv",
+      "bytes": 33908887
+    },
+    {
+      "filename": "datos_abiertos_2024_02.csv",
+      "bytes": 33242518
+    },
+    {
+      "filename": "datos_abiertos_2024_03.csv",
+      "bytes": 33824245
+    },
+    {
+      "filename": "datos_abiertos_2024_04.csv",
+      "bytes": 35119762
+    },
+    {
+      "filename": "datos_abiertos_2024_05.csv",
+      "bytes": 35597286
+    },
+    {
+      "filename": "datos_abiertos_2024_06.csv",
+      "bytes": 31623557
+    },
+    {
+      "filename": "datos_abiertos_2024_07.csv",
+      "bytes": 31551829
+    },
+    {
+      "filename": "datos_abiertos_2024_08.csv",
+      "bytes": 34220772
+    },
+    {
+      "filename": "datos_abiertos_2024_09.csv",
+      "bytes": 25448981
+    },
+    {
+      "filename": "datos_abiertos_2024_10.csv",
+      "bytes": 27315974
+    },
+    {
+      "filename": "datos_abiertos_2024_11.csv",
+      "bytes": 33902108
+    },
+    {
+      "filename": "datos_abiertos_2024_12.csv",
+      "bytes": 29469190
+    },
+    {
+      "filename": "datos_abiertos_2025_01.csv",
+      "bytes": 32959338
+    },
+    {
+      "filename": "datos_abiertos_2025_02.csv",
+      "bytes": 32304810
+    },
+    {
+      "filename": "datos_abiertos_2025_03.csv",
+      "bytes": 35131572
+    },
+    {
+      "filename": "datos_abiertos_2025_04.csv",
+      "bytes": 31755599
+    },
+    {
+      "filename": "datos_abiertos_2025_05.csv",
+      "bytes": 34332994
+    },
+    {
+      "filename": "datos_abiertos_2025_06.csv",
+      "bytes": 30924814
+    },
+    {
+      "filename": "datos_abiertos_2025_07.csv",
+      "bytes": 31932339
+    },
+    {
+      "filename": "datos_abiertos_2025_08.csv",
+      "bytes": 32506714
+    },
+    {
+      "filename": "datos_abiertos_2025_09.csv",
+      "bytes": 32686988
+    },
+    {
+      "filename": "datos_abiertos_2025_10.csv",
+      "bytes": 36442309
+    },
+    {
+      "filename": "datos_abiertos_2025_11.csv",
+      "bytes": 32997087
+    },
+    {
+      "filename": "datos_abiertos_2025_12.csv",
+      "bytes": 29089463
+    },
+    {
+      "filename": "datos_abiertos_2026_01.csv",
+      "bytes": 30985189
+    },
+    {
+      "filename": "datos_abiertos_2026_02.csv",
+      "bytes": 28953901
+    },
+    {
+      "filename": "datos_abiertos_2026_03.csv",
+      "bytes": 32640591
+    },
+    {
+      "filename": "datos_abiertos_2026_04.csv",
+      "bytes": 30523683
+    },
+    {
+      "filename": "datos_abiertos_2026_05.csv",
+      "bytes": 27427394
+    },
+    {
+      "filename": "datos_abiertos_2026_06.csv",
+      "bytes": 30826027
+    },
+    {
+      "filename": "datos_abiertos_2026_07.csv",
+      "bytes": 33696291
+    },
+    {
+      "filename": "datos_abiertos_2026_08.csv",
+      "bytes": 34158210
+    },
+    {
+      "filename": "datos_abiertos_2026_09.csv",
+      "bytes": 42566896
+    }
+  ],
+  "rows_read": 39078984,
+  "rows_kept": 39078226,
+  "rows_removed": {
+    "invalid_trip_id": 0,
+    "invalid_timestamp": 0,
+    "invalid_station_id": 0,
+    "duplicate_trip_ids": 758
+  },
+  "rows_removed_total": 758,
+  "timestamp_formats": {
+    "year_month_day": 37885758,
+    "day_month_year": 1193226
+  },
+  "output_rows": 1161039,
+  "created_at_utc": "2026-10-23T21:41:09+00:00",
+  "cleaning_rules": [
+    "Se usan Viaje_Id, Inicio_del_viaje y Origen_Id.",
+    "Se excluyen campos clave vacíos o inválidos.",
+    "Se eliminan identificadores de viaje duplicados dentro del mismo mes.",
+    "Se conservan los picos de demanda; no hay un criterio validado para descartarlos.",
+    "Los CSV originales no se modifican."
+  ]
+}
