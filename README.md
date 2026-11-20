@@ -10,20 +10,21 @@ La Fase 2 añade entrenamiento, evaluación temporal y registro del modelo.
 
 ## Entorno
 
-Validado localmente en Windows con **Python 3.13.1**. El proyecto admite Python
-3.13 y 3.14; la ejecución documentada corresponde a 3.13. Desde CMD:
+El artefacto de modelo usado como referencia para Fase 3 se generó en macOS con
+**Python 3.14.7**. Las dependencias directas están fijadas en `requirements.txt` y
+el lock completo del entorno está en `requirements-lock-macos-py314.txt`.
+`requirements-lock-windows-py313.txt` corresponde a otro entorno: Windows/Python 3.13.
 
-```bat
-py -3.13 -m venv .venv
-.venv\Scripts\activate.bat
+Para preparar un entorno limpio en macOS:
+
+```bash
+python3.14 -m venv .venv-repro
+source .venv-repro/bin/activate
 python -m pip install -r requirements.txt
 python -m pip check
 ```
 
-Para reproducir las versiones exactas del entorno Windows utilizado, instalar
-`requirements-lock-windows-py313.txt` cuando esté disponible y después el paquete
-editable con `python -m pip install --no-deps -e .`. Ese archivo fija un entorno
-Windows/Python 3.13; no se presenta como lock universal para otros sistemas.
+El entorno `.venv-repro` queda excluido de Git.
 
 ## 1 Requerimientos y alcance
 
@@ -268,7 +269,7 @@ Desde otro CMD con el entorno activado, verifica la recarga con una fila de
 ejemplo. Sustituye `1` por la versión que imprimió tu registro.
 
 ```bat
-python -c "import mlflow, mlflow.sklearn, pandas as pd; mlflow.set_tracking_uri('sqlite:///data/mlflow.db'); model = mlflow.sklearn.load_model('models:/mibici-poisson/1'); row = pd.DataFrame({'estacion_id': ['1'], 'dia_semana': ['0'], 'mes': ['7'], 'anio': [2026]}); print('Salidas estimadas:', model.predict(row)[0])"
+python -c "import mlflow, mlflow.sklearn, pandas as pd; mlflow.set_tracking_uri('sqlite:///data/mlflow.db'); model = mlflow.sklearn.load_model('models:/mibici-poisson/2'); row = pd.DataFrame({'estacion_id': ['1'], 'dia_semana': ['0'], 'mes': ['7'], 'anio': [2026]}); print('Salidas estimadas:', model.predict(row)[0])"
 ```
 
 Cada clon genera sus propios IDs de corrida y versiones en su registro local.
@@ -279,7 +280,7 @@ La base SQLite y los artefactos de `mlruns/` se conservan localmente.
 El endpoint `POST /predict` recibe una fecha y una lista de IDs de estación. La API
 deriva el día de la semana, el mes y el año, y carga el pipeline completo (preprocesador
 y modelo) desde MLflow al iniciar. El URI registrado actualmente es
-`models:/mibici-poisson/1`. La API no entrena ni registra modelos al recibir solicitudes.
+`models:/mibici-poisson/2`. La API no entrena ni registra modelos al recibir solicitudes.
 
 Desde la raíz del proyecto y con el entorno virtual activo, instala las dependencias
 actualizadas y ejecuta el servicio:
@@ -292,8 +293,8 @@ python -m uvicorn MiBici.api:app --host 127.0.0.1 --port 8000
 La documentación interactiva queda en `http://127.0.0.1:8000/docs`; el estado del
 servicio se consulta en `http://127.0.0.1:8000/health`.
 
-La API usa `models:/mibici-poisson/1` por defecto. Para seleccionar otra versión,
-configura `MIBICI_MODEL_URI`, por ejemplo `models:/mibici-poisson/2`. Para apuntar a
+La API usa `models:/mibici-poisson/2` por defecto. Para seleccionar otra versión,
+configura `MIBICI_MODEL_URI`, por ejemplo `models:/mibici-poisson/3`. Para apuntar a
 otro almacén de MLflow, configura `MLFLOW_TRACKING_URI`. Si no se define, utiliza
 `data/mlflow.db` del repositorio. El registro y los artefactos deben estar accesibles
 desde el entorno donde se inicia el servicio.
@@ -327,6 +328,57 @@ debe contener IDs enteros positivos, únicos y no vacíos. FastAPI documenta los
 las validaciones en OpenAPI/Swagger. Las estaciones no presentes durante el
 entrenamiento se codifican como categorías desconocidas; su estimación puede ser menos
 representativa.
+
+### Verificación de reproducibilidad en un entorno limpio
+
+La referencia corresponde a la versión 2 del modelo y a la ejecución de prueba
+`a530ba141c7b4a52b5eec285359fad01`. El modelo está versionado en MLflow como
+`models:/mibici-poisson/2`; `reports/fase3/reproducibility_reference.json` guarda
+las métricas, la huella SHA-256 del dataset y tres predicciones de referencia.
+
+El procedimiento usa otro entorno virtual en la misma Mac. Mantiene las dependencias
+aisladas, pero reutiliza la base y el artefacto locales de MLflow, además del dataset
+de `data/processed/historico_filtrado/`.
+
+En una terminal, desde la raíz del repositorio, crea el entorno limpio, instala las
+versiones fijadas e inicia la API con el modelo registrado:
+
+```bash
+python3.14 -m venv .venv-repro
+source .venv-repro/bin/activate
+python -m pip install -r requirements-lock-macos-py314.txt
+export MIBICI_MODEL_URI="models:/mibici-poisson/2"
+python -m uvicorn MiBici.api:app --host 127.0.0.1 --port 8001
+```
+
+En una segunda terminal, desde la misma raíz del repositorio, activa el entorno y
+compara las métricas de prueba, las predicciones directas del modelo y la respuesta
+del endpoint:
+
+```bash
+source .venv-repro/bin/activate
+export MIBICI_MODEL_URI="models:/mibici-poisson/2"
+python -m MiBici.reproducibility --model-uri "models:/mibici-poisson/2" --api-url http://127.0.0.1:8001/predict
+```
+
+El comando compara las versiones de Python y paquetes, la huella SHA-256 del dataset,
+el MAE y el sesgo en prueba, y las tres predicciones del ejemplo, con tolerancia
+absoluta de `0.0001`. Guarda el resultado en
+`reports/fase3/reproducibility_clean_env.json` y termina con código distinto de cero
+si alguna comparación no coincide. No entrena el modelo ni crea corridas en MLflow.
+El reporte generado puede versionarse en Git como evidencia.
+
+La API resuelve la versión registrada al artefacto que MLflow ya guardó y lo carga
+directamente. Así, iniciar el servicio o verificarlo no modifica el artefacto ni crea
+una nueva corrida.
+
+El Random Forest usa `RANDOM_SEED = 42` en `MiBici/config.py`; la regresión Poisson
+utilizada como artefacto de referencia no tiene un componente aleatorio.
+
+Este procedimiento demuestra aislamiento de dependencias en la misma máquina. Para
+ejecutarlo en otra máquina también deben estar accesibles el registro y el artefacto
+de MLflow, además del dataset cuya huella se compara. Copiar solo la base SQLite no
+incluye los archivos del modelo.
 
 
 ## Colaboración y entrega
