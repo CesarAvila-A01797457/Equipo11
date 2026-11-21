@@ -4,34 +4,37 @@ Proyecto de MLOps con estructura Cookiecutter Data Science para preparar y explo
 salidas diarias por estación. Se procesó el histórico de diciembre de 2014 a
 septiembre de 2026: **142 CSV mensuales y un catálogo actual**.
 
-La fase implementada comprende descarga, limpieza por bloques, EDA y preprocesamiento.
+La Fase 1 comprende análisis del problema, descarga y preparación de datos, EDA, preprocesamiento y trazabilidad. La Fase 2 cubre el pipeline de modelado y el seguimiento de experimentos con MLflow. La Fase 3 incluye pruebas automatizadas, servicio FastAPI, reproducibilidad entre macOS y Windows, versionado de artefactos con DVC y despliegue en Docker.
+
 Los datos describen viajes realizados; no disponibilidad ni demanda insatisfecha.
-La Fase 2 añade entrenamiento, evaluación temporal y registro del modelo.
 
 ## Índice
 
 - [Entorno](#entorno)
-- [1 Requerimientos y alcance](#1-requerimientos-y-alcance)
-- [2 Descarga y preparación](#2-descarga-y-preparación)
-- [3 EDA y preprocesamiento](#3-eda-y-preprocesamiento)
-- [4 Versiones y trazabilidad en MLflow](#4-versiones-y-trazabilidad-en-mlflow)
-- [5 Organización y verificación](#5-organización-y-verificación)
-- [Fase 2: reproducción del entrenamiento](#fase-2-reproducción-del-entrenamiento)
-  - [1. Generar el histórico filtrado](#1-generar-el-histórico-filtrado)
-  - [2. Comparar configuraciones en validación](#2-comparar-configuraciones-en-validación)
-  - [Comparación de modelos en validación](#comparación-de-modelos-en-validación)
-  - [3. Evaluar en prueba y registrar el pipeline](#3-evaluar-en-prueba-y-registrar-el-pipeline)
-  - [4. Comprobar MLflow y recargar el modelo](#4-comprobar-mlflow-y-recargar-el-modelo)
-- [Fase 3: servicio de predicción con FastAPI](#fase-3-servicio-de-predicción-con-fastapi)
-  - [Schema de POST /predict](#schema-de-post-predict)
-  - [Verificación de reproducibilidad en un entorno limpio](#verificación-de-reproducibilidad-en-un-entorno-limpio)
-  - [Sincronizar datos y modelo con DVC](#sincronizar-datos-y-modelo-con-dvc)
-  - [Ejecutar la comprobación](#ejecutar-la-comprobación)
-- [Fase 4: contenedor Docker](#fase-4-contenedor-docker)
-  - [Imagen publicada en Docker Hub](#imagen-publicada-en-docker-hub)
+- [Fase 1: análisis, preparación y exploración de datos](#fase-1-análisis-preparación-y-exploración-de-datos)
+  - [Requerimientos y alcance](#requerimientos-y-alcance)
+  - [Descarga y preparación de datos](#descarga-y-preparación-de-datos)
+  - [EDA y preprocesamiento](#eda-y-preprocesamiento)
+  - [Versionado y trazabilidad de datos](#versionado-y-trazabilidad-de-datos)
+  - [Estructura del repositorio](#estructura-del-repositorio)
+- [Fase 2: pipeline, modelado y MLflow](#fase-2-pipeline-modelado-y-mlflow)
+  - [Preparación del histórico para modelado](#preparación-del-histórico-para-modelado)
+  - [Modelos e hiperparámetros](#modelos-e-hiperparámetros)
+  - [Resultados de validación](#resultados-de-validación)
+  - [Evaluación final y registro del modelo](#evaluación-final-y-registro-del-modelo)
+  - [Seguimiento de experimentos en MLflow](#seguimiento-de-experimentos-en-mlflow)
+- [Fase 3: pruebas, servicio y despliegue](#fase-3-pruebas-servicio-y-despliegue)
+  - [Pruebas automatizadas](#pruebas-automatizadas)
+  - [Servicio de predicción con FastAPI](#servicio-de-predicción-con-fastapi)
+  - [Esquema de POST /predict](#esquema-de-post-predict)
+  - [Reproducibilidad en un entorno limpio](#reproducibilidad-en-un-entorno-limpio)
+    - [Versionado de datos y modelo con DVC](#versionado-de-datos-y-modelo-con-dvc)
+    - [Comparación con la referencia](#comparación-con-la-referencia)
+  - [Contenedor Docker](#contenedor-docker)
+  - [Publicación en Docker Hub](#publicación-en-docker-hub)
+  - [Estado del análisis de drift](#estado-del-análisis-de-drift)
 
 ## Entorno
-
 El artefacto de modelo usado como referencia para Fase 3 se generó en macOS con
 **Python 3.14.7**. Las dependencias directas están fijadas en `requirements.txt` y
 el lock completo del entorno está en `requirements-lock-macos-py314.txt`.
@@ -48,7 +51,11 @@ python -m pip check
 
 El entorno `.venv-repro` queda excluido de Git.
 
-## 1 Requerimientos y alcance
+## Fase 1: análisis, preparación y exploración de datos
+
+**Herramientas:** Python, Pandas, Git/GitHub y MLflow para registrar las fuentes y los resultados de preparación.
+
+### Requerimientos y alcance
 
 Se busca apoyar la planeación con futuras estimaciones de salidas por estación y
 día. El ML Canvas y la justificación de valor deben acompañar la presentación.
@@ -56,7 +63,7 @@ Este repositorio conserva los datos observados y documenta los supuestos de sus
 transformaciones. Los estación-días ausentes no se completan automáticamente con
 cero: hace falta información histórica de operación para justificarlo.
 
-## 2 Descarga y preparación
+### Descarga y preparación de datos
 
 Fuente: [Datos abiertos de MiBici](https://mibici.net/en/open-data/).
 La lista completa está en `references/mibici_urls_2014_2026.txt`.
@@ -81,7 +88,7 @@ viajes en memoria. Para el histórico y equipos con RAM limitada se utiliza la
 versión por bloques. La lista `references/mibici_urls_fase1.txt` se conserva como
 referencia de la prueba inicial con cinco meses.
 
-## 3 EDA y preprocesamiento
+### EDA y preprocesamiento
 
 La preparación imprime un run_id. Sustituir `ID_DE_TU_PREPARACION` por el valor de
 la ejecución propia al lanzar:
@@ -125,7 +132,7 @@ Sus categorías se toleran con `handle_unknown=ignore`; esto no garantiza precis
 predictiva para estaciones nuevas. No se imputan ceros ni añaden rezagos en esta
 versión. Ver [transformaciones, validaciones y límites](references/PREPROCESAMIENTO.md).
 
-## 4 Versiones y trazabilidad en MLflow
+### Versionado y trazabilidad de datos
 
 Experimento de las etapas históricas: **mibici-fase1-historico**.
 
@@ -153,7 +160,9 @@ La [evidencia de ejecución local](reports/EJECUCION_LOCAL.md) documenta los IDs
 resultados confirmados del 24 de octubre de 2026. Para reproducir archivos idénticos
 se deben contrastar las huellas y usar las mismas fuentes y versiones de software.
 
-## 5 Organización y verificación
+### Estructura del repositorio
+
+El proyecto sigue la organización de Cookiecutter Data Science y versiona en GitHub el código, la documentación y los scripts de procesamiento.
 
 - `MiBici/dataset.py`: descarga y manifiesto.
 - `MiBici/prepare_data_streaming.py`: validación, deduplicación y agregado por bloques.
@@ -163,28 +172,20 @@ se deben contrastar las huellas y usar las mismas fuentes y versiones de softwar
 - `references/`: fuentes y documentación metodológica.
 - `reports/`: evidencia agregada y resultados para la presentación.
 
-Instala las dependencias del proyecto y ejecuta todas las pruebas desde la raíz:
-
-```bash
-pytest -q
-```
-
-La suite combina las pruebas existentes de limpieza, EDA y preprocesamiento con
-pruebas del cálculo de métricas y una integración del flujo CSV → preparación de
-variables → entrenamiento → predicción → evaluación. Utiliza archivos pequeños y
-no descarga el histórico de MiBici.
-
 El EDA de todo el periodo es retrospectivo. Al modelar se deben fijar decisiones
 sin optimizar sobre prueba y usar una evaluación temporal adecuada. No se presentan
 métricas de un modelo final ni se afirma operación para cualquier fecha futura.
 
-## Fase 2: reproducción del entrenamiento
+## Fase 2: pipeline, modelado y MLflow
+
+**Herramientas:** Scikit-learn para el pipeline y los modelos; MLflow para registrar parámetros, métricas, artefactos y el modelo seleccionado.
 
 Ejecuta los comandos desde la raíz del repositorio en CMD con el entorno de la
 sección **Entorno** activado. Para replicar el entorno de Windows, usa
 `requirements-lock-windows-py313.txt` según las instrucciones de esa sección.
 
-### 1. Generar el histórico filtrado
+### Preparación del histórico para modelado
+
 
 ```bat
 python -m MiBici.dataset
@@ -197,7 +198,8 @@ reutilizarlos. Consulta el [reporte de preparación](reports/EJECUCION_FILTRADA.
 para comprobar los conteos. El pipeline vuelve a ajustar el preprocesador con
 entrenamiento y recibe el CSV agregado directamente.
 
-### 2. Comparar configuraciones en validación
+### Modelos e hiperparámetros
+
 
 ```bat
 python -m MiBici.modeling.train --baseline --experiment mibici-fase2-modelado
@@ -237,7 +239,8 @@ demás opciones se mantienen iguales:
 | Validación | 2026-01-01 a 2026-06-30 | 66,715 |
 | Prueba | 2026-07-01 a 2026-09-30 | 41,600 |
 
-### Comparación de modelos en validación
+### Resultados de validación
+
 
 | Modelo | Configuración | MAE | Sesgo |
 |---|---|---:|---:|
@@ -255,7 +258,8 @@ pero no superó a Poisson. El sesgo se conserva como métrica complementaria: to
 los modelos sobreestimaron en promedio y Poisson tuvo el mayor sesgo. Las corridas
 y sus parámetros también quedan registrados en el experimento de MLflow.
 
-### 3. Evaluar en prueba y registrar el pipeline
+### Evaluación final y registro del modelo
+
 
 Random Forest se compara en validación en la sección anterior. Poisson con
 `alpha=0.01` obtuvo el menor MAE, así que se conserva el flujo original para la
@@ -275,7 +279,8 @@ Las métricas se expresan en salidas por estación y día. El sesgo es el promed
 de predicción menos valor observado. En prueba, Poisson redujo el MAE un 40.8 %
 frente a la referencia y tendió a sobreestimar.
 
-### 4. Comprobar MLflow y recargar el modelo
+### Seguimiento de experimentos en MLflow
+
 
 ```bat
 python -m mlflow ui --backend-store-uri sqlite:///data/mlflow.db --host 127.0.0.1 --port 5000
@@ -297,7 +302,24 @@ python -c "import mlflow, mlflow.sklearn, pandas as pd; mlflow.set_tracking_uri(
 Cada clon genera sus propios IDs de corrida y versiones en su registro local.
 La base SQLite y los artefactos de `mlruns/` se conservan localmente.
 
-## Fase 3: servicio de predicción con FastAPI
+## Fase 3: pruebas, servicio y despliegue
+
+**Herramientas:** pytest, FastAPI, DVC, Docker y Docker Hub.
+
+### Pruebas automatizadas
+
+Instala las dependencias del proyecto y ejecuta todas las pruebas desde la raíz:
+
+```bash
+pytest -q
+```
+
+La suite combina las pruebas existentes de limpieza, EDA y preprocesamiento con
+pruebas del cálculo de métricas y una integración del flujo CSV → preparación de
+variables → entrenamiento → predicción → evaluación. Utiliza archivos pequeños y
+no descarga el histórico de MiBici.
+
+### Servicio de predicción con FastAPI
 
 El endpoint `POST /predict` recibe una fecha y una lista de IDs de estación. La API
 deriva el día de la semana, el mes y el año, y carga el pipeline completo (preprocesador
@@ -321,7 +343,8 @@ otro almacén de MLflow, configura `MLFLOW_TRACKING_URI`. Si no se define, utili
 `data/mlflow.db` del repositorio. El registro y los artefactos deben estar accesibles
 desde el entorno donde se inicia el servicio.
 
-### Schema de `POST /predict`
+### Esquema de `POST /predict`
+
 
 Solicitud JSON:
 
@@ -351,7 +374,8 @@ las validaciones en OpenAPI/Swagger. Las estaciones no presentes durante el
 entrenamiento se codifican como categorías desconocidas; su estimación puede ser menos
 representativa.
 
-### Verificación de reproducibilidad en un entorno limpio
+### Reproducibilidad en un entorno limpio
+
 
 La referencia corresponde a la versión 2 del modelo y a la ejecución de prueba
 `a530ba141c7b4a52b5eec285359fad01`. El modelo está versionado en MLflow como
@@ -363,7 +387,8 @@ y una copia portable del artefacto del modelo. Los contenidos se recuperan con `
 pull`; la URI y el run originales de MLflow se conservan como referencia, pero la API
 puede cargar el artefacto local sin conectarse a la base MLflow de la Mac.
 
-#### Sincronizar datos y modelo con DVC
+#### Versionado de datos y modelo con DVC
+
 
 DVC mantiene en Git los archivos `.dvc` y guarda los contenidos en un remoto. Para este
 proyecto se usa una carpeta dedicada dentro de OneDrive, sincronizada en ambos equipos.
@@ -409,7 +434,8 @@ carpeta real en cada equipo. DVC trata esa carpeta sincronizada como un remoto d
 sistema de archivos, no como una conexión directa a la API de OneDrive. [DVC admite
 remotos de sistema de archivos](https://doc.dvc.org/user-guide/data-management/remote-storage).
 
-#### Ejecutar la comprobación
+#### Comparación con la referencia
+
 
 En la Cloud PC, crea el entorno de aplicación con Python y dependencias compatibles
 con el artefacto. El modelo se guardó con Python 3.14.7, scikit-learn 1.9.1 y las
@@ -454,7 +480,7 @@ utilizada como artefacto de referencia no tiene un componente aleatorio.
 Este procedimiento usa una Cloud PC Windows como entorno separado. La reproducción
 requiere recuperar los contenidos DVC antes de iniciar la API y el verificador.
 
-## Fase 4: contenedor Docker
+### Contenedor Docker
 
 El contenedor sirve la API FastAPI y empaqueta el artefacto local
 `models/mibici-poisson-v2/`. No necesita iniciar MLflow ni conectarse al registro para
@@ -473,7 +499,8 @@ instala solo las dependencias necesarias para la API y el modelo, y ejecuta el p
 con un usuario sin privilegios. `.dockerignore` excluye datos, archivos locales y
 artefactos de desarrollo del contexto de construcción.
 
-### Imagen publicada en Docker Hub
+### Publicación en Docker Hub
+
 
 La imagen está publicada en el repositorio
 [a01797457/mibici-api-equipo11](https://hub.docker.com/r/a01797457/mibici-api-equipo11)
