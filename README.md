@@ -8,6 +8,28 @@ La fase implementada comprende descarga, limpieza por bloques, EDA y preprocesam
 Los datos describen viajes realizados; no disponibilidad ni demanda insatisfecha.
 La Fase 2 añade entrenamiento, evaluación temporal y registro del modelo.
 
+## Índice
+
+- [Entorno](#entorno)
+- [1 Requerimientos y alcance](#1-requerimientos-y-alcance)
+- [2 Descarga y preparación](#2-descarga-y-preparación)
+- [3 EDA y preprocesamiento](#3-eda-y-preprocesamiento)
+- [4 Versiones y trazabilidad en MLflow](#4-versiones-y-trazabilidad-en-mlflow)
+- [5 Organización y verificación](#5-organización-y-verificación)
+- [Fase 2: reproducción del entrenamiento](#fase-2-reproducción-del-entrenamiento)
+  - [1. Generar el histórico filtrado](#1-generar-el-histórico-filtrado)
+  - [2. Comparar configuraciones en validación](#2-comparar-configuraciones-en-validación)
+  - [Comparación de modelos en validación](#comparación-de-modelos-en-validación)
+  - [3. Evaluar en prueba y registrar el pipeline](#3-evaluar-en-prueba-y-registrar-el-pipeline)
+  - [4. Comprobar MLflow y recargar el modelo](#4-comprobar-mlflow-y-recargar-el-modelo)
+- [Fase 3: servicio de predicción con FastAPI](#fase-3-servicio-de-predicción-con-fastapi)
+  - [Schema de POST /predict](#schema-de-post-predict)
+  - [Verificación de reproducibilidad en un entorno limpio](#verificación-de-reproducibilidad-en-un-entorno-limpio)
+  - [Sincronizar datos y modelo con DVC](#sincronizar-datos-y-modelo-con-dvc)
+  - [Ejecutar la comprobación](#ejecutar-la-comprobación)
+- [Fase 4: contenedor Docker](#fase-4-contenedor-docker)
+  - [Imagen publicada en Docker Hub](#imagen-publicada-en-docker-hub)
+
 ## Entorno
 
 El artefacto de modelo usado como referencia para Fase 3 se generó en macOS con
