@@ -1,0 +1,84 @@
+{
+  "scenario": "synthetic_station_id_corruption",
+  "model_path": "C:\\Users\\edrmz\\Documents\\Projects\\Maestria\\MLOPS\\fase1\\Equipo11\\models\\mibici-poisson-v2",
+  "model_pickle_sha256": "cdf3268570bdc48ea2c809e20f3db582d97b7718c374cbc595f85149e36df239",
+  "source_model_run_id": "a530ba141c7b4a52b5eec285359fad01",
+  "input_sha256": "8bdfbd5c8952f9f261d4dbf950a48756cdc2b56c9c686a4898b63aac95beae83",
+  "evaluation_period": [
+    "2026-01-01",
+    "2026-06-30"
+  ],
+  "seed": 42,
+  "thresholds": {
+    "station_total_variation": 0.1,
+    "mae_relative_increase": 0.1
+  },
+  "scenarios": [
+    {
+      "fraction_of_known_rows": 0.0,
+      "changed_rows": 0,
+      "total_rows": 66715,
+      "unknown_station_rate": 0.014404556696395114,
+      "station_total_variation": 0.0,
+      "mae": 12.065078627182627,
+      "bias": 8.251766005671929,
+      "mae_relative_increase": 0.0,
+      "drift_alert": false,
+      "performance_alert": false,
+      "joint_alert": false
+    },
+    {
+      "fraction_of_known_rows": 0.1,
+      "changed_rows": 6575,
+      "total_rows": 66715,
+      "unknown_station_rate": 0.11295810537360414,
+      "station_total_variation": 0.098553548677209,
+      "mae": 12.912574993360886,
+      "bias": 7.53477779732762,
+      "mae_relative_increase": 0.07024374994696259,
+      "drift_alert": false,
+      "performance_alert": false,
+      "joint_alert": false
+    },
+    {
+      "fraction_of_known_rows": 0.3,
+      "changed_rows": 19726,
+      "total_rows": 66715,
+      "unknown_station_rate": 0.31008019186090086,
+      "station_total_variation": 0.29567563516450573,
+      "mae": 14.711354274449006,
+      "bias": 5.96901695956263,
+      "mae_relative_increase": 0.21933347713991003,
+      "drift_alert": true,
+      "performance_alert": true,
+      "joint_alert": true
+    },
+    {
+      "fraction_of_known_rows": 0.6,
+      "changed_rows": 39452,
+      "total_rows": 66715,
+      "unknown_station_rate": 0.6057558270254065,
+      "station_total_variation": 0.5913512703290116,
+      "mae": 17.361780787903303,
+      "bias": 3.7383577642547166,
+      "mae_relative_increase": 0.4390109939927953,
+      "drift_alert": true,
+      "performance_alert": true,
+      "joint_alert": true
+    },
+    {
+      "fraction_of_known_rows": 1.0,
+      "changed_rows": 65754,
+      "total_rows": 66715,
+      "unknown_station_rate": 1.0,
+      "station_total_variation": 0.9855954433036048,
+      "mae": 20.9201055127131,
+      "bias": 0.7993484441687974,
+      "mae_relative_increase": 0.7339385974311095,
+      "drift_alert": true,
+      "performance_alert": true,
+      "joint_alert": true
+    }
+  ],
+  "drift_run_id": "b54263aa588d4e5e8f9cb075bf256407"
+}
