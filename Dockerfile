@@ -12,13 +12,13 @@ RUN python -m pip install --no-cache-dir -r requirements-api.txt
 
 # Incluye la API y el modelo versionado con DVC.
 COPY MiBici ./MiBici
-COPY models/mibici-poisson-v2 ./models/mibici-poisson-v2
+COPY models/mibici-poisson-v4 ./models/mibici-poisson-v4
 
 # Ejecuta el servicio con un usuario sin privilegios.
 RUN addgroup --system --gid 10001 mibici \
     && adduser --system --uid 10001 --ingroup mibici --home /home/mibici mibici
 ENV HOME=/home/mibici \
-    MIBICI_MODEL_URI=models/mibici-poisson-v2
+    MIBICI_MODEL_URI=models/mibici-poisson-v4
 USER 10001:10001
 
 EXPOSE 8000

@@ -12,10 +12,13 @@ from urllib.request import Request, urlopen
 
 import numpy as np
 
-from MiBici.api import build_prediction_features, load_registered_model
+from MiBici.api import (
+    build_prediction_features,
+    load_registered_model,
+    select_model_input,
+)
 from MiBici.config import PROJ_ROOT, PROCESSED_DATA_DIR
 from MiBici.features import (
-    PREDICTORS,
     build_calendar_features,
     load_daily_counts,
     sha256,
@@ -93,7 +96,7 @@ def run_check(
     model_path = Path(model_uri)
     model_hash = sha256_directory(model_path) if model_path.is_dir() else None
     test = splits["test"]
-    test_predictions = np.asarray(model.predict(test[PREDICTORS]), dtype=float)
+    test_predictions = np.asarray(model.predict(select_model_input(model, test)), dtype=float)
     metrics = calculate_metrics(test["salidas"].to_numpy(), test_predictions)
 
     sample = reference["api_sample"]
@@ -102,7 +105,7 @@ def run_check(
         date.fromisoformat(sample_request["fecha_objetivo"]),
         sample_request["estacion_ids"],
     )
-    direct_predictions = np.asarray(model.predict(sample_features), dtype=float).tolist()
+    direct_predictions = np.asarray(model.predict(select_model_input(model, sample_features)), dtype=float).tolist()
     api_response = request_api_prediction(api_url, sample_request)
     api_predictions = [
         item["salidas_estimadas"] for item in api_response["predicciones"]
