@@ -5,12 +5,12 @@ ni entrena un modelo. Usa matrices dispersas para evitar one-hot denso en RAM.
 """
 
 import argparse
-import hashlib
-import json
-import platform
 from datetime import datetime
+import hashlib
 from importlib.metadata import version
+import json
 from pathlib import Path
+import platform
 
 import joblib
 import numpy as np
@@ -19,9 +19,11 @@ from scipy import sparse
 from sklearn.compose import ColumnTransformer
 from sklearn.preprocessing import OneHotEncoder, StandardScaler
 
+from MiBici.feature_engineering.calendar import CalendarStep
+
 ROOT = Path(__file__).resolve().parents[1]
-CATEGORICAL = ["estacion_id", "dia_semana", "mes"]
-NUMERIC = ["anio"]
+CATEGORICAL = list(CalendarStep.categorical)
+NUMERIC = list(CalendarStep.numeric)
 PREDICTORS = CATEGORICAL + NUMERIC
 
 
@@ -68,12 +70,7 @@ def load_daily_counts(input_path, quality_report=None):
 
 
 def build_calendar_features(data):
-    frame = data.copy()
-    frame["estacion_id"] = frame.estacion_id.astype("string")
-    frame["dia_semana"] = frame.fecha.dt.day_of_week.astype("string")
-    frame["mes"] = frame.fecha.dt.month.astype("string")
-    frame["anio"] = frame.fecha.dt.year.astype("int64")
-    return frame
+    return CalendarStep().transform(data)
 
 
 def temporal_split(frame, train_end, validation_end):

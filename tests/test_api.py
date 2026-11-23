@@ -57,3 +57,23 @@ def test_openapi_documents_prediction_schema():
     assert "/predict" in schema["paths"]
     assert "PredictionRequest" in schema["components"]["schemas"]
     assert "PredictionResponse" in schema["components"]["schemas"]
+
+
+class FeatureSetModel(ExampleModel):
+    feature_names_in_ = ["fecha", "estacion_id"]
+
+
+def test_predict_sends_date_to_feature_engineering_models():
+    model = FeatureSetModel()
+    app = create_app(model=model, model_uri="models/mibici-poisson-v4")
+
+    with TestClient(app) as client:
+        response = client.post(
+            "/predict",
+            json={"fecha_objetivo": "2026-11-20", "estacion_ids": [3]},
+        )
+
+    assert response.status_code == 200
+    assert list(model.input_frame.columns) == ["fecha", "estacion_id"]
+    assert str(model.input_frame.fecha.iloc[0].date()) == "2026-11-20"
+    assert model.input_frame.estacion_id.tolist() == ["3"]

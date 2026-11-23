@@ -322,9 +322,13 @@ no descarga el histórico de MiBici.
 ### Servicio de predicción con FastAPI
 
 El endpoint `POST /predict` recibe una fecha y una lista de IDs de estación. La API
-deriva el día de la semana, el mes y el año, y carga el pipeline completo (preprocesador
-y modelo) desde MLflow al iniciar. El URI registrado actualmente es
-`models:/mibici-poisson/2`. La API no entrena ni registra modelos al recibir solicitudes.
+carga el pipeline completo al iniciar y le entrega solo las columnas con las que se
+entrenó (`feature_names_in_`). Con el modelo v4 son `fecha` y `estacion_id`, y el pipeline
+deriva las demás características ([resultados](reports/fase4_features/RESULTADOS.md)).
+Con el modelo v1 (`models:/mibici-poisson/2`) son el día de la semana, el mes y el año.
+El modelo servido por defecto es el artefacto local `models/mibici-poisson-v4`
+(Poisson `alpha=0.3`, conjunto `v4_perfil_estacion`). La API no entrena ni registra
+modelos al recibir solicitudes.
 
 Desde la raíz del proyecto y con el entorno virtual activo, instala las dependencias
 actualizadas y ejecuta el servicio:
@@ -337,8 +341,9 @@ python -m uvicorn MiBici.api:app --host 127.0.0.1 --port 8000
 La documentación interactiva queda en `http://127.0.0.1:8000/docs`; el estado del
 servicio se consulta en `http://127.0.0.1:8000/health`.
 
-La API usa `models:/mibici-poisson/2` por defecto. Para seleccionar otra versión,
-configura `MIBICI_MODEL_URI`, por ejemplo `models:/mibici-poisson/3`. Para apuntar a
+La API usa `models/mibici-poisson-v4` por defecto; recupéralo con
+`dvc pull models/mibici-poisson-v4.dvc`. Para seleccionar otro modelo, configura
+`MIBICI_MODEL_URI`, por ejemplo `models:/mibici-poisson/2` para volver a v1. Para apuntar a
 otro almacén de MLflow, configura `MLFLOW_TRACKING_URI`. Si no se define, utiliza
 `data/mlflow.db` del repositorio. El registro y los artefactos deben estar accesibles
 desde el entorno donde se inicia el servicio.
@@ -483,12 +488,12 @@ requiere recuperar los contenidos DVC antes de iniciar la API y el verificador.
 ### Contenedor Docker
 
 El contenedor sirve la API FastAPI y empaqueta el artefacto local
-`models/mibici-poisson-v2/`. No necesita iniciar MLflow ni conectarse al registro para
+`models/mibici-poisson-v4/`. No necesita iniciar MLflow ni conectarse al registro para
 predecir. Antes de construir la imagen, recupera el modelo con DVC y asegúrate de que
 Docker Desktop esté iniciado:
 
 ```bash
-dvc pull models/mibici-poisson-v2.dvc
+dvc pull models/mibici-poisson-v4.dvc
 docker build -t ml-service:latest .
 docker run --rm -p 8000:8000 ml-service:latest
 ```

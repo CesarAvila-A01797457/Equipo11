@@ -3,14 +3,21 @@
 from pathlib import Path
 
 import numpy as np
-import typer
 from sklearn.dummy import DummyRegressor
 from sklearn.ensemble import RandomForestRegressor
 from sklearn.linear_model import PoissonRegressor
 from sklearn.metrics import mean_absolute_error
 from sklearn.pipeline import Pipeline
+import typer
 
-from MiBici.config import PROCESSED_DATA_DIR, PROJ_ROOT, RANDOM_SEED
+from MiBici.config import PROCESSED_DATA_DIR, PROJ_ROOT, RANDOM_SEED, RAW_DATA_DIR
+from MiBici.feature_engineering import (
+    FEATURE_SETS,
+    NEEDS_CATALOG,
+    FeaturePipeline,
+    build_steps,
+    load_station_catalog,
+)
 from MiBici.features import (
     PREDICTORS,
     build_calendar_features,
@@ -22,6 +29,8 @@ from MiBici.features import (
 
 app = typer.Typer()
 FILTERED_DIR = PROCESSED_DATA_DIR / "historico_filtrado"
+CATALOG_PATH = RAW_DATA_DIR / "mibici" / "nomenclatura_2026_09.csv"
+FEATURE_INPUTS = ["fecha", "estacion_id"]
 FOREST_CONFIGS = {
     1: {
         "n_estimators": 50,
@@ -47,14 +56,49 @@ FOREST_CONFIGS = {
 }
 
 
-def build_model_pipeline(model):
-    """Combina el preprocesamiento y el modelo para entrenar e inferir."""
+def build_model_pipeline(model, feature_steps=None):
+    """Combina el preprocesamiento y el modelo para entrenar e inferir.
+
+    Sin ``feature_steps`` conserva el pipeline v1 registrado. Con pasos, el
+    pipeline recibe ``fecha`` y ``estacion_id`` y deriva las características.
+    """
+    if feature_steps is None:
+        return Pipeline(
+            [
+                ("preprocessor", build_preprocessor()),
+                ("model", model),
+            ]
+        )
+    features = FeaturePipeline(feature_steps)
     return Pipeline(
         [
-            ("preprocessor", build_preprocessor()),
+            ("features", features),
+            ("preprocessor", features.build_column_transformer()),
             ("model", model),
         ]
     )
+
+
+def segmented_metrics(evaluation, predictions, known_stations, prefix):
+    """MAE y sesgo totales, por estación conocida/nueva y por mes."""
+    actual = evaluation["salidas"].to_numpy()
+    metrics = {
+        f"{prefix}_{key}": value
+        for key, value in calculate_metrics(actual, predictions).items()
+    }
+    known = evaluation["estacion_id"].isin(known_stations).to_numpy()
+    for label, mask in (("known_station", known), ("new_station", ~known)):
+        if mask.any():
+            part = calculate_metrics(actual[mask], predictions[mask])
+            metrics[f"{prefix}_mae_{label}"] = part["mae"]
+            metrics[f"{prefix}_rows_{label}"] = float(mask.sum())
+    months = evaluation["fecha"].dt.strftime("%Y_%m").to_numpy()
+    for month in sorted(set(months)):
+        mask = months == month
+        metrics[f"{prefix}_mae_{month}"] = calculate_metrics(
+            actual[mask], predictions[mask]
+        )["mae"]
+    return metrics
 
 
 def calculate_metrics(actual, predictions):
@@ -100,6 +144,10 @@ def main(
     baseline: bool = typer.Option(
         False, help="Evalúa la media de entrenamiento en validación."
     ),
+    feature_set: str = typer.Option(
+        "v1", help=f"Conjunto de características: {', '.join(FEATURE_SETS)}."
+    ),
+    catalog_path: Path = CATALOG_PATH,
 ):
     """Valida las particiones temporales y evalúa el modelo solicitado."""
     selected_models = sum((baseline, poisson, random_forest))
@@ -124,6 +172,13 @@ def main(
     if random_forest and forest_config not in FOREST_CONFIGS:
         raise typer.BadParameter("--forest-config debe ser 1, 2 o 3.")
 
+    if feature_set not in FEATURE_SETS:
+        raise typer.BadParameter(f"--feature-set debe ser uno de: {', '.join(FEATURE_SETS)}")
+    catalog = load_station_catalog(catalog_path) if feature_set in NEEDS_CATALOG else None
+    # v1 conserva exactamente el pipeline registrado en Fase 2.
+    feature_steps = None if feature_set == "v1" else build_steps(feature_set, catalog)
+    inputs = PREDICTORS if feature_steps is None else FEATURE_INPUTS
+
     data = load_daily_counts(input_path, quality_report)
     parts = temporal_split(build_calendar_features(data), train_end, validation_end)
     for name, part in parts.items():
@@ -146,16 +201,22 @@ def main(
         else:
             model = DummyRegressor(strategy="mean")
             model_label = "baseline-mean"
+        if feature_set != "v1":
+            model_label = f"{model_label}-{feature_set}"
         train = parts["train"]
         split = "test" if test else "validation"
         evaluation = parts[split]
         period = "prueba" if test else "validación"
-        pipeline = build_model_pipeline(model)
-        pipeline.fit(train[PREDICTORS], train["salidas"])
-        predictions = pipeline.predict(evaluation[PREDICTORS])
+        pipeline = build_model_pipeline(model, feature_steps)
+        pipeline.fit(train[inputs], train["salidas"])
+        predictions = pipeline.predict(evaluation[inputs])
         actual = evaluation["salidas"].to_numpy()
         metrics = calculate_metrics(actual, predictions)
         mae, bias = metrics["mae"], metrics["bias"]
+        detail = segmented_metrics(
+            evaluation, predictions, set(train["estacion_id"]), split
+        )
+        n_features = len(pipeline.named_steps["preprocessor"].get_feature_names_out())
         if poisson:
             typer.echo(f"Regresión de Poisson (alpha={alpha:g})")
         elif random_forest:
@@ -167,6 +228,10 @@ def main(
             typer.echo(f"Referencia (media de entrenamiento): {predictions[0]:.4f}")
         typer.echo(f"MAE en {period}: {mae:.4f} salidas")
         typer.echo(f"Sesgo medio en {period}: {bias:+.4f} salidas")
+        typer.echo(f"Características: {feature_set} ({n_features} columnas)")
+        for label in ("known_station", "new_station"):
+            if f"{split}_mae_{label}" in detail:
+                typer.echo(f"MAE {label}: {detail[f'{split}_mae_{label}']:.4f}")
 
         if experiment:
             import mlflow
@@ -188,17 +253,21 @@ def main(
                         "validation_end": validation_end,
                         "train_rows": len(train),
                         "evaluation_rows": len(evaluation),
-                        "predictors": ",".join(PREDICTORS),
+                        "predictors": ",".join(inputs),
+                        "feature_set": feature_set,
+                        "feature_steps": repr(feature_steps or "CalendarStep (v1)"),
+                        "n_features": n_features,
+                        "catalog_sha256": sha256(catalog_path) if catalog is not None else "",
                     }
                 )
-                mlflow.log_metrics({f"{split}_mae": mae, f"{split}_bias": bias})
+                mlflow.log_metrics(detail)
                 if register_model:
                     import mlflow.sklearn
 
                     model_info = mlflow.sklearn.log_model(
                         pipeline,
                         name="pipeline",
-                        input_example=train[PREDICTORS].head(3),
+                        input_example=train[inputs].head(3),
                         serialization_format="cloudpickle",
                     )
                     version = mlflow.register_model(
